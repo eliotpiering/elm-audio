@@ -1,0 +1,14 @@
+{
+  "name": "elm-audio",
+  "version": "0.1.0",
+  "main": "electron-start.js",
+  "scripts": {
+    "start": "electron electron-start.js"
+  },
+  "devDependencies": {
+    "electron-prebuilt": "^1.2.0"
+  },
+  "dependencies": {
+    "electron-chromecast": "^1.0.5"
+  }
+}

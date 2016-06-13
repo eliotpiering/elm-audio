@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Player exposing (..)
 
 import Html exposing (Html)
 import Html.Attributes as Attr
@@ -7,9 +7,10 @@ import Html.App as Html
 import Json.Decode as JsonD exposing (Decoder, (:=))
 import Array exposing (Array)
 import Debug
-import Task
-import Http
+import Navigation
 import MyStyle
+import Port
+import MyModels exposing (..)
 
 
 main : Program Never
@@ -25,40 +26,17 @@ main =
 init : ( Model, Cmd Msg )
 init =
     ( initialModel
-    , fetchFileRecords "/home/eliot/Music/"
+    , Port.newDir initialModel.rootPath
     )
-
-
-
--- MODEL
-
-
-type alias Model =
-    { currentSong : Int
-    , files : List FileRecord
-    , subDirs : List FileRecord
-    , queue : Array FileRecord
-    }
-
-
-type alias FileRecord =
-    { path : String
-    , name : String
-    }
-
-
-type alias DataModel =
-    { files : List FileRecord
-    , subDirs : List FileRecord
-    }
 
 
 initialModel : Model
 initialModel =
     { currentSong = 0
     , queue = Array.empty
-    , files = [ { path = "/home/eliot/Music/Micachu%20and%20the%20Shapes%20-%20Good%20Sad%20Happy%20Bad%20%282015%29%20-%20CD%20V0/10%20Peach.mp3", name = "10 Peach.mp3" } ]
+    , files = []
     , subDirs = []
+    , rootPath = "/home/eliot/Music"
     }
 
 
@@ -69,17 +47,15 @@ initialModel =
 type Msg
     = ClickFile FileRecord
     | ClickSubDir FileRecord
+    | NavigationBack
     | NextSong
     | PreviousSong
-      -- Http stuff
-    | FetchFileRecords String
-    | FetchSucceed DataModel
-    | FetchFail Http.Error
+    | UpdateDir DataModel
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case action of
+    case Debug.log "action " action of
         ClickFile fileRecord ->
             ( { model
                 | queue = Array.push fileRecord model.queue
@@ -88,9 +64,12 @@ update action model =
             )
 
         ClickSubDir subDir ->
-            ( model
-            , fetchFileRecords subDir.path
+            ( { model | rootPath = subDir.path }
+            , Port.newDir subDir.path
             )
+
+        NavigationBack ->
+            ( model, Navigation.back 1 )
 
         NextSong ->
             let
@@ -101,7 +80,7 @@ update action model =
                     updatedModel =
                         if shouldReset then
                             { model
-                                | currentSong =  0
+                                | currentSong = 0
                             }
                         else
                             { model
@@ -123,24 +102,18 @@ update action model =
                             }
                         else
                             { model
-                                | currentSong =(model.currentSong - 1)
+                                | currentSong = (model.currentSong - 1)
                             }
                 in
                     ( updatedModel, Cmd.none )
 
-        FetchFileRecords basePath ->
-            ( model, fetchFileRecords basePath )
-
-        FetchSucceed dataModel ->
+        UpdateDir dataModel ->
             ( { model
-                | files = dataModel.files
-                , subDirs = dataModel.subDirs
+                | files = Debug.log "new file " dataModel.files
+                , subDirs = Debug.log "new sub Dirs " dataModel.subDirs
               }
-            , Cmd.none
+            , Navigation.newUrl model.rootPath
             )
-
-        FetchFail _ ->
-            ( model, Cmd.none )
 
 
 
@@ -149,34 +122,7 @@ update action model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
-
-
-
--- HTTP
-
-
-fetchFileRecords : String -> Cmd Msg
-fetchFileRecords base =
-    let
-        url =
-            "http://localhost:5000/ls?dir=" ++ base
-    in
-        Task.perform FetchFail FetchSucceed (Http.get filesDecoder url)
-
-
-filesDecoder : Decoder DataModel
-filesDecoder =
-    JsonD.object2 DataModel
-        ("files" := JsonD.list decodeFileRecords)
-        ("subDirs" := JsonD.list decodeFileRecords)
-
-
-decodeFileRecords : Decoder FileRecord
-decodeFileRecords =
-    JsonD.object2 FileRecord
-        ("path" := JsonD.string)
-        ("name" := JsonD.string)
+    Port.updateDir UpdateDir
 
 
 
@@ -187,7 +133,7 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ audioPlayer model
-        , fileView model
+        , fileView (Debug.log "view" model)
         , queueView model.queue
         ]
 
@@ -210,7 +156,7 @@ audioPlayer model =
                     , Events.on "ended" (JsonD.succeed NextSong)
                     ]
                     []
-                  , nextSongButton
+                , nextSongButton
                 ]
 
         Nothing ->
@@ -222,6 +168,7 @@ nextSongButton =
     Html.div [ Events.onClick <| NextSong ]
         [ Html.text "NEXT -->" ]
 
+
 previousSongButton : Html Msg
 previousSongButton =
     Html.div [ Events.onClick <| PreviousSong ]
@@ -231,9 +178,15 @@ previousSongButton =
 fileView : Model -> Html Msg
 fileView model =
     Html.div [ MyStyle.fileViewContainer ]
-        [ Html.ul [ MyStyle.songList ] (List.map subDirToHtml model.subDirs)
+        [ directoryNavigationView
+        , Html.ul [ MyStyle.songList ] (List.map subDirToHtml model.subDirs)
         , Html.ul [ MyStyle.songList ] (List.map fileToHtml model.files)
         ]
+
+
+directoryNavigationView : Html Msg
+directoryNavigationView =
+    Html.div [ Events.onClick NavigationBack ] [ Html.text ".. Back" ]
 
 
 subDirToHtml : FileRecord -> Html Msg

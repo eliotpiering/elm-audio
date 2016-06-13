@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Elm Audio</title>
+  <script type="text/javascript" src="./elm.js"></script>
+  <script>window.Elm = require('./elm.js');</script>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+  var ipc = require('electron').ipcRenderer;
+  var app = Elm.Player.fullscreen();
+
+  ipc.on('listDirectory', (event, message) => {
+    app.ports.updateDir.send(message);
+  })
+
+  app.ports.newDir.subscribe(function(basePath) {
+    console.log("new Dire");
+    console.log(basePath.toString());
+    ipc.send('list-new-directory', basePath.toString());
+  });
+</script>
+
+</html>

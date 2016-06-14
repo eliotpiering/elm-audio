@@ -6,6 +6,7 @@ import Html.Events as Events
 import Html.App as Html
 import Json.Decode as JsonD exposing (Decoder, (:=))
 import Array exposing (Array)
+import String
 import Debug
 import Navigation
 import MyStyle
@@ -15,19 +16,33 @@ import MyModels exposing (..)
 
 main : Program Never
 main =
-    Html.program
+    Navigation.program urlParser
         { init = init
         , view = view
         , update = update
+        , urlUpdate = urlUpdate
         , subscriptions = subscriptions
         }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( initialModel
-    , Port.newDir initialModel.rootPath
-    )
+toUrl : String -> String
+toUrl path =
+    "#/" ++  (Debug.log "to_url" path)
+
+
+fromUrl : String -> String
+fromUrl url =
+    String.dropLeft 1 <| Debug.log "from url " url
+
+
+urlParser : Navigation.Parser String
+urlParser =
+    Navigation.makeParser (fromUrl << .hash)
+
+
+init : String -> ( Model, Cmd Msg )
+init s =
+  (initialModel, Navigation.newUrl <| toUrl initialModel.rootPath )
 
 
 initialModel : Model
@@ -55,7 +70,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case Debug.log "action " action of
+    case action of
         ClickFile fileRecord ->
             ( { model
                 | queue = Array.push fileRecord model.queue
@@ -64,12 +79,12 @@ update action model =
             )
 
         ClickSubDir subDir ->
-            ( { model | rootPath = subDir.path }
-            , Port.newDir subDir.path
+            ( model 
+            , Navigation.newUrl <| Debug.log "new url" (toUrl subDir.path)
             )
 
         NavigationBack ->
-            ( model, Navigation.back 1 )
+            ( model, Navigation.back <| Debug.log "nav back "1 )
 
         NextSong ->
             let
@@ -109,11 +124,16 @@ update action model =
 
         UpdateDir dataModel ->
             ( { model
-                | files = Debug.log "new file " dataModel.files
-                , subDirs = Debug.log "new sub Dirs " dataModel.subDirs
+                | files = dataModel.files
+                , subDirs = dataModel.subDirs
               }
-            , Navigation.newUrl model.rootPath
+            , Cmd.none
             )
+
+
+urlUpdate : String -> Model -> ( Model, Cmd Msg )
+urlUpdate newPath model =
+    ( { model | rootPath = Debug.log "new Path --asd " newPath }, Port.newDir newPath )
 
 
 
@@ -133,19 +153,15 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ audioPlayer model
-        , fileView (Debug.log "view" model)
+        , fileView (model)
         , queueView model.queue
         ]
 
 
 audioPlayer : Model -> Html Msg
 audioPlayer model =
-    case Debug.log "new player" (Array.get model.currentSong model.queue) of
+    case (Array.get model.currentSong model.queue) of
         Just fileRecord ->
-            -- let
-            --     srcWithFile =
-            --         "file://" ++ fileRecord.path
-            -- in
             Html.div [ MyStyle.audioViewContainer ]
                 [ previousSongButton
                 , Html.audio

@@ -16,7 +16,7 @@ app.on('window-all-closed', function() {
 });
 
 app.on('ready', function() {
-  mainWindow = new BrowserWindow({fullScreen: true});
+  mainWindow = new BrowserWindow({fullScreen: false});
 	mainWindow.on('app-command', (e, cmd) => {
 		// Navigate the window back when the user hits their mouse back button
 		if (cmd === 'browser-backward' && mainWindow.webContents.canGoBack()) {
@@ -46,7 +46,9 @@ app.on('ready', function() {
 
 function listDirectory(basePath) {
   console.log(basePath);
+  console.log("before")
   var filesAndSubDirs = fs.readdirSync(basePath);
+  console.log("after")
   var directories = [];
   var files = [];
   filesAndSubDirs.forEach(function(f){
@@ -56,7 +58,7 @@ function listDirectory(basePath) {
     var statObject = {name: f, path: fullPath};
     if (stat.isDirectory()) {
       directories.push(statObject);
-    } else {
+    } else if (stat.isFile()) {
       files.push(statObject);
     }
   });
@@ -68,7 +70,10 @@ function listDirectory(basePath) {
 }
 
 function escapePath(path) {
-  path.replace(" ", "\ ");
+  // console.log(path);
+  // var p = str.replace(" ", "\ ");
+  console.log("escaped path = " );
+  console.log(path );
   return path;
 }
 

@@ -27,7 +27,7 @@ main =
 
 toUrl : String -> String
 toUrl path =
-    "#/" ++  (Debug.log "to_url" path)
+    "#/" ++ (Debug.log "to_url" path)
 
 
 fromUrl : String -> String
@@ -42,7 +42,7 @@ urlParser =
 
 init : String -> ( Model, Cmd Msg )
 init s =
-  (initialModel, Navigation.newUrl <| toUrl initialModel.rootPath )
+    ( initialModel, Navigation.newUrl <| toUrl initialModel.rootPath )
 
 
 initialModel : Model
@@ -51,7 +51,7 @@ initialModel =
     , queue = Array.empty
     , files = []
     , subDirs = []
-    , rootPath = "/home/eliot/Music"
+    , rootPath = "/media/eliot/TOSHIBA EXT/organized_music/"
     }
 
 
@@ -79,12 +79,12 @@ update action model =
             )
 
         ClickSubDir subDir ->
-            ( model 
+            ( model
             , Navigation.newUrl <| Debug.log "new url" (toUrl subDir.path)
             )
 
         NavigationBack ->
-            ( model, Navigation.back <| Debug.log "nav back "1 )
+            ( model, Navigation.back <| Debug.log "nav back " 1 )
 
         NextSong ->
             let
@@ -154,7 +154,7 @@ view model =
     Html.div []
         [ audioPlayer model
         , fileView (model)
-        , queueView model.queue
+        , queueView model.queue model.currentSong
         ]
 
 
@@ -164,14 +164,18 @@ audioPlayer model =
         Just fileRecord ->
             Html.div [ MyStyle.audioViewContainer ]
                 [ previousSongButton
-                , Html.audio
-                    [ Attr.src fileRecord.path
-                    , Attr.type' "audio/mp3"
-                    , Attr.controls True
-                    , Attr.autoplay True
-                    , Events.on "ended" (JsonD.succeed NextSong)
+                , (Html.div [ MyStyle.floatLeft ]
+                    [ Html.audio
+                        [ Attr.src fileRecord.path
+                        , Attr.type' "audio/mp3"
+                        , Attr.controls True
+                        , Attr.autoplay True
+                        , MyStyle.audioPlayer
+                        , Events.on "ended" (JsonD.succeed NextSong)
+                        ]
+                        []
                     ]
-                    []
+                  )
                 , nextSongButton
                 ]
 
@@ -181,14 +185,18 @@ audioPlayer model =
 
 nextSongButton : Html Msg
 nextSongButton =
-    Html.div [ Events.onClick <| NextSong ]
-        [ Html.text "NEXT -->" ]
+    Html.div
+        [ MyStyle.floatLeft
+        ]
+        [ Html.div [ MyStyle.button, Events.onClick <| NextSong ] [ Html.text "NEXT -->" ] ]
 
 
 previousSongButton : Html Msg
 previousSongButton =
-    Html.div [ Events.onClick <| PreviousSong ]
-        [ Html.text "<-- PREVIOUS" ]
+    Html.div
+        [ MyStyle.floatLeft
+        ]
+        [ Html.div [ MyStyle.button, Events.onClick <| PreviousSong ] [ Html.text "<-- PREVIOUS" ] ]
 
 
 fileView : Model -> Html Msg
@@ -223,11 +231,31 @@ fileToHtml file =
         [ Html.text file.name ]
 
 
-queueView : Array FileRecord -> Html Msg
-queueView files =
+queueView : Array FileRecord -> Int -> Html Msg
+queueView queue currentSong =
     Html.div [ MyStyle.queueViewContainer ]
         [ Html.ul [ MyStyle.songList ]
-            (List.map fileToHtml
-                (Array.toList files)
-            )
+            <| Array.toList
+            <| Array.indexedMap (queueToHtml currentSong) queue
         ]
+
+
+
+-- Takes a currentSong, then is mapped with index over the queue
+
+
+queueToHtml : Int -> Int -> FileRecord -> Html Msg
+queueToHtml currentSong i file =
+    if (i == currentSong) then
+        Html.li
+            [ MyStyle.songItem
+            , Events.onClick <| ClickFile file
+            , MyStyle.currentSong
+            ]
+            [ Html.text file.name ]
+    else
+        Html.li
+            [ MyStyle.songItem
+            , Events.onClick <| ClickFile file
+            ]
+            [ Html.text file.name ]

@@ -13,3 +13,13 @@ app.ports.newDir.subscribe(function(basePath) {
     ipc.send('list-new-directory', basePath.toString());
   }
 });
+
+app.ports.pause.subscribe(function(){
+  var player = document.getElementsByTagName("audio")[0];
+  if (!player)  {return;}
+  if (player.paused) {
+    player.play();
+  } else {
+    player.pause();
+  }
+});

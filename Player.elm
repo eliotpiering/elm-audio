@@ -11,6 +11,8 @@ import Debug
 import Navigation
 import MyStyle
 import Port
+import Keyboard
+import Char
 import MyModels exposing (..)
 
 
@@ -50,8 +52,10 @@ initialModel =
     { currentSong = 0
     , queue = Array.empty
     , files = []
-    , subDirs = []
-    , rootPath = "/media/eliot/TOSHIBA EXT/organized_music/"
+    , subDirs =
+        []
+        --   , rootPath = "/media/eliot/TOSHIBA EXT/organized_music/"
+    , rootPath = "/home/eliot/Music/"
     }
 
 
@@ -66,11 +70,26 @@ type Msg
     | NextSong
     | PreviousSong
     | UpdateDir DataModel
+    | KeyUp Keyboard.KeyCode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
+        KeyUp keyCode ->
+            case keyCode of
+                37 ->
+                    ( previousSong model, Cmd.none )
+
+                39 ->
+                    ( nextSong model, Cmd.none )
+
+                32 ->
+                    ( model, Port.pause "null" )
+
+                _ ->
+                    ( model, Cmd.none )
+
         ClickFile fileRecord ->
             ( { model
                 | queue = Array.push fileRecord model.queue
@@ -87,40 +106,10 @@ update action model =
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
         NextSong ->
-            let
-                shouldReset =
-                    model.currentSong >= (Array.length model.queue) - 1
-            in
-                let
-                    updatedModel =
-                        if shouldReset then
-                            { model
-                                | currentSong = 0
-                            }
-                        else
-                            { model
-                                | currentSong = (model.currentSong + 1)
-                            }
-                in
-                    ( updatedModel, Cmd.none )
+            ( nextSong model, Cmd.none )
 
         PreviousSong ->
-            let
-                shouldReset =
-                    model.currentSong == 0
-            in
-                let
-                    updatedModel =
-                        if shouldReset then
-                            { model
-                                | currentSong = (Array.length model.queue - 1)
-                            }
-                        else
-                            { model
-                                | currentSong = (model.currentSong - 1)
-                            }
-                in
-                    ( updatedModel, Cmd.none )
+            ( previousSong model, Cmd.none )
 
         UpdateDir dataModel ->
             ( { model
@@ -137,12 +126,48 @@ urlUpdate newPath model =
 
 
 
+-- Helpers
+
+
+nextSong : Model -> Model
+nextSong model =
+    let
+        shouldReset =
+            model.currentSong >= (Array.length model.queue) - 1
+    in
+        if shouldReset then
+            { model
+                | currentSong = 0
+            }
+        else
+            { model
+                | currentSong = (model.currentSong + 1)
+            }
+
+
+previousSong : Model -> Model
+previousSong model =
+    let
+        shouldReset =
+            model.currentSong == 0
+    in
+        if shouldReset then
+            { model
+                | currentSong = (Array.length model.queue - 1)
+            }
+        else
+            { model
+                | currentSong = (model.currentSong - 1)
+            }
+
+
+
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Port.updateDir UpdateDir
+    Sub.batch [ Port.updateDir UpdateDir, Keyboard.ups KeyUp ]
 
 
 

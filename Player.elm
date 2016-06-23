@@ -12,8 +12,9 @@ import Navigation
 import MyStyle
 import Port
 import Keyboard
-import Char
+import Drag
 import MyModels exposing (..)
+import FileObject
 
 
 main : Program Never
@@ -54,8 +55,7 @@ initialModel =
     , files = []
     , subDirs =
         []
-        --   , rootPath = "/media/eliot/TOSHIBA EXT/organized_music/"
-    , rootPath = "/home/eliot/Music/"
+    , rootPath = "/home/eliot/"
     }
 
 
@@ -64,13 +64,14 @@ initialModel =
 
 
 type Msg
-    = ClickFile FileRecord
+    = ClickFile Int FileObject.Msg
     | ClickSubDir FileRecord
     | NavigationBack
     | NextSong
     | PreviousSong
     | UpdateDir DataModel
     | KeyUp Keyboard.KeyCode
+    | Draging FileObject.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -90,12 +91,22 @@ update action model =
                 _ ->
                     ( model, Cmd.none )
 
-        ClickFile fileRecord ->
-            ( { model
-                | queue = Array.push fileRecord model.queue
-              }
-            , Cmd.none
-            )
+        ClickFile id msg ->
+            let
+                indexedFileObject =
+                    List.head <| List.filter (\i-> id == i.id) model.files
+            in
+                case indexedFileObject of
+                    Just f ->
+                        (( { model
+                            | queue = Array.push f.fileObject.fileRecord model.queue
+                           }
+                         , Cmd.none
+                         )
+                        )
+
+                    Nothing  ->
+                        ( model, Cmd.none )
 
         ClickSubDir subDir ->
             ( model
@@ -113,11 +124,31 @@ update action model =
 
         UpdateDir dataModel ->
             ( { model
-                | files = dataModel.files
+                | files = makeIndexedFileObjects dataModel.files
                 , subDirs = dataModel.subDirs
               }
             , Cmd.none
             )
+
+        Draging msg ->
+            ( Debug.log "dragging" model, Cmd.none )
+
+
+makeIndexedFileObjects : List FileRecord -> List IndexedFileObject
+makeIndexedFileObjects fileRecords =
+    let
+        ids =
+            generateIdList (List.length fileRecords) []
+    in
+        List.map2 (\id fileRecord -> { id = id, fileObject = (FileObject.init fileRecord) }) ids fileRecords
+
+
+generateIdList : Int -> List Int -> List Int
+generateIdList len list =
+    if len == 0 then
+        list
+    else
+        len :: (generateIdList (len - 1) list)
 
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
@@ -167,7 +198,11 @@ previousSong model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ Port.updateDir UpdateDir, Keyboard.ups KeyUp ]
+    Sub.batch
+        [ Port.updateDir UpdateDir
+        , Keyboard.ups KeyUp
+        , Sub.map Draging FileObject.Draging
+        ]
 
 
 
@@ -229,13 +264,18 @@ fileView model =
     Html.div [ MyStyle.fileViewContainer ]
         [ directoryNavigationView
         , Html.ul [ MyStyle.songList ] (List.map subDirToHtml model.subDirs)
-        , Html.ul [ MyStyle.songList ] (List.map fileToHtml model.files)
+        , Html.ul [ MyStyle.songList ] (List.map viewFileObject model.files)
         ]
+
+
+viewFileObject : IndexedFileObject -> Html Msg
+viewFileObject { id, fileObject } =
+    Html.map (ClickFile id) (FileObject.view fileObject)
 
 
 directoryNavigationView : Html Msg
 directoryNavigationView =
-    Html.div [ Events.onClick NavigationBack ] [ Html.text ".. Back" ]
+    Html.div [ Events.onClick NavigationBack ] [ Html.mark [ MyStyle.upArrow ] [ Html.text "⇪" ] ]
 
 
 subDirToHtml : FileRecord -> Html Msg
@@ -243,15 +283,6 @@ subDirToHtml file =
     Html.li
         [ MyStyle.songItem
         , Events.onClick <| ClickSubDir file
-        ]
-        [ Html.text file.name ]
-
-
-fileToHtml : FileRecord -> Html Msg
-fileToHtml file =
-    Html.li
-        [ MyStyle.songItem
-        , Events.onClick <| ClickFile file
         ]
         [ Html.text file.name ]
 
@@ -274,13 +305,11 @@ queueToHtml currentSong i file =
     if (i == currentSong) then
         Html.li
             [ MyStyle.songItem
-            , Events.onClick <| ClickFile file
             , MyStyle.currentSong
             ]
             [ Html.text file.name ]
     else
         Html.li
             [ MyStyle.songItem
-            , Events.onClick <| ClickFile file
             ]
             [ Html.text file.name ]

@@ -1,10 +1,12 @@
 module MyModels exposing (..)
+
 import Array exposing (Array)
+import Drag
 
 
 type alias Model =
     { currentSong : Int
-    , files : List FileRecord
+    , files : List IndexedFileObject
     , subDirs : List FileRecord
     , queue : Array FileRecord
     , rootPath : String
@@ -23,3 +25,14 @@ type alias DataModel =
     }
 
 
+type alias FileObjectModel =
+    { fileRecord : FileRecord
+    , dragModel : Drag.Model
+    }
+
+
+type alias IndexedFileObject =
+    { id : Int
+    , fileObject : FileObjectModel
+    }
+                             

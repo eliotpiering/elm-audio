@@ -1,8 +1,8 @@
 var fs = require('fs');
 var electron = require('electron');
+
 var app = electron.app;
 var BrowserWindow = electron.BrowserWindow;
-// var chromecast = require('electron-chromecast');
 
 var mainWindow = null;
 
@@ -32,8 +32,6 @@ app.on('ready', function() {
   });
 
   electron.ipcMain.on('list-new-directory', function(_event, basePath){
-
-    console.log("list ne wdirectory " + basePath );
     var data = listDirectory(basePath);
     mainWindow.webContents.send('listDirectory', data);
   });
@@ -46,13 +44,11 @@ app.on('ready', function() {
 
 function listDirectory(basePath) {
   console.log(basePath);
-  console.log("before")
   var filesAndSubDirs = fs.readdirSync(basePath);
-  console.log("after")
   var directories = [];
   var files = [];
   filesAndSubDirs.forEach(function(f){
-    var fullPath = basePath + '/' + escapePath(f);
+    var fullPath = basePath + '/' + f;
 
     var stat = fs.statSync(fullPath);
     var statObject = {name: f, path: fullPath};
@@ -68,22 +64,3 @@ function listDirectory(basePath) {
   };
   return dataObject;
 }
-
-function escapePath(path) {
-  // console.log(path);
-  // var p = str.replace(" ", "\ ");
-  console.log("escaped path = " );
-  console.log(path );
-  return path;
-}
-
-
-// app.on('ready', function() {
-//   chromecast(function (receivers) {
-//     return new Promise(function (resolve, reject) {
-//       // Do some logic to choose a receiver, possibly ask the user through a UI
-//       var chosenReceiver = receivers[0];
-//       resolve(chosenReceiver);
-//     });
-//   });
-// });

@@ -38,7 +38,10 @@ songList =
 
 
 songItem =
-    style []
+    style
+        [ ( "padding-top", "5px" )
+        , ( "padding-bottom", "5px" )
+        ]
 
 
 currentSong =
@@ -68,4 +71,18 @@ audioPlayer =
         , ( "padding", "10%" )
         , ( "background-color", "black" )
         , ( "border-radius", "20%" )
+        ]
+
+
+upArrow =
+    style
+        [ ( "background-color", "white" )
+        , ( "color", "black" )
+        , ( "font-family", "serif" )
+        , ( "font-size", "2em" )
+        , ( "line-height", "2em" )
+        , ( "padding-top", "5%" )
+        , ( "padding-bottom", "5%" )
+        , ( "padding-left", "30%" )
+        , ( "padding-right", "30%" )
         ]

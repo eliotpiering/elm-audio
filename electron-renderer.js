@@ -8,8 +8,6 @@ ipc.on('listDirectory', (event, message) => {
 });
 
 app.ports.newDir.subscribe(function(basePath) {
-  console.log("new Dire");
-  console.log(basePath.toString());
   if (basePath.length !== 0) {
     ipc.send('list-new-directory', basePath.toString());
   }

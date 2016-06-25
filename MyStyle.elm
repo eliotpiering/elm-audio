@@ -37,11 +37,17 @@ songList =
         ]
 
 
-songItem =
-    style
-        [ ( "padding-top", "5px" )
-        , ( "padding-bottom", "5px" )
-        ]
+songItem isSelected =
+    let
+        baseStyle =
+            [ ( "padding-top", "5px" )
+            , ( "padding-bottom", "5px" )
+            ]
+    in
+        if isSelected then
+            style <| [ ( "color", "white" ), ( "background-color", "black" ) ] ++ baseStyle
+        else
+            style baseStyle
 
 
 currentSong =

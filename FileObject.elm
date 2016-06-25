@@ -1,45 +1,36 @@
-module FileObject exposing (Msg, init, update, view)
+module FileObject exposing (Msg, init, update, view, reset)
 
 import Html exposing (Html)
 import Html.Events as Events
 import MyModels exposing (..)
 import MyStyle exposing (..)
-import Drag
 
 
 init : FileRecord -> FileObjectModel
 init fileRecord =
-    { fileRecord = fileRecord, dragModel = Drag.initialModel }
+    { fileRecord = fileRecord, isSelected = False }
 
 
 type Msg
-    = ClickFile FileRecord
-    | Draging Position
+    = ClickFile
 
 
 update : Msg -> FileObjectModel -> ( FileObjectModel, Cmd Msg )
 update msg model =
     case msg of
-        ClickFile fileRecord ->
-            ( model, Cmd.none )
-
-        DragMsg dragMsg ->
-            ( Debug.log "DragMsg" model, Cmd.none )
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : FileObjectModel -> Sub Msg
-subscriptions model =
-    Drag.subscriptions mouse.downs
+        ClickFile ->
+            ( { model | isSelected = not model.isSelected }, Cmd.none )
 
 
 view : FileObjectModel -> Html Msg
 view model =
     Html.li
-        [ MyStyle.songItem
-        , Events.onClick <| ClickFile model.fileRecord
+        [ MyStyle.songItem model.isSelected
+        , Events.onClick <| ClickFile
         ]
         [ Html.text model.fileRecord.name ]
+
+
+reset : FileObjectModel -> FileObjectModel
+reset model =
+    { model | isSelected = False }

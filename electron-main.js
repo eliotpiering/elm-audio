@@ -16,7 +16,7 @@ app.on('window-all-closed', function() {
 });
 
 app.on('ready', function() {
-  mainWindow = new BrowserWindow({fullScreen: false});
+  mainWindow = new BrowserWindow({width: 800, height: 800});
 	mainWindow.on('app-command', (e, cmd) => {
 		// Navigate the window back when the user hits their mouse back button
 		if (cmd === 'browser-backward' && mainWindow.webContents.canGoBack()) {

@@ -8,8 +8,14 @@ type alias Model =
     { currentSong : Int
     , files : List IndexedFileObject
     , subDirs : List FileRecord
-    , queue : Array FileRecord
+    , queue : Array IndexedFileObject
     , rootPath : String
+    , dropZone :
+        { lowX : Int
+        , highX : Int
+        , lowY : Int
+        , highY : Int
+        }
     }
 
 
@@ -27,7 +33,7 @@ type alias DataModel =
 
 type alias FileObjectModel =
     { fileRecord : FileRecord
-    , dragModel : Drag.Model
+    , isSelected : Bool
     }
 
 
@@ -35,4 +41,3 @@ type alias IndexedFileObject =
     { id : Int
     , fileObject : FileObjectModel
     }
-                             

@@ -12,9 +12,11 @@ import Navigation
 import MyStyle
 import Port
 import Keyboard
-import Drag
+import Mouse
+import Focus
 import MyModels exposing (..)
 import FileObject
+import Window as Win
 
 
 main : Program Never
@@ -55,7 +57,10 @@ initialModel =
     , files = []
     , subDirs =
         []
-    , rootPath = "/home/eliot/"
+    , rootPath =
+        "/home/eliot/Music"
+        -- , dropZone = {lowX = Win.width / 2, highX = Win.width, lowY = 0, highY = Win.height }
+    , dropZone = { lowX = 400, highX = 800, lowY = 0, highY = 800 }
     }
 
 
@@ -71,7 +76,8 @@ type Msg
     | PreviousSong
     | UpdateDir DataModel
     | KeyUp Keyboard.KeyCode
-    | Draging FileObject.Msg
+    | MouseDowns { x : Int, y : Int }
+    | MouseUps { x : Int, y : Int }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -93,20 +99,23 @@ update action model =
 
         ClickFile id msg ->
             let
-                indexedFileObject =
-                    List.head <| List.filter (\i-> id == i.id) model.files
+                newFiles =
+                    (List.map
+                       (\indexed ->
+                          if indexed.id == id
+                          then
+                            {indexed
+                            | fileObject = fst
+                              <| FileObject.update msg indexed.fileObject
+                            }
+                          else
+                            indexed
+                       ) model.files)
             in
-                case indexedFileObject of
-                    Just f ->
-                        (( { model
-                            | queue = Array.push f.fileObject.fileRecord model.queue
-                           }
-                         , Cmd.none
-                         )
-                        )
-
-                    Nothing  ->
-                        ( model, Cmd.none )
+                (( { model | files = newFiles}
+                 , Cmd.none
+                 )
+                )
 
         ClickSubDir subDir ->
             ( model
@@ -130,8 +139,27 @@ update action model =
             , Cmd.none
             )
 
-        Draging msg ->
-            ( Debug.log "dragging" model, Cmd.none )
+        MouseDowns xy ->
+            ( model, Cmd.none )
+
+        MouseUps xy ->
+            let
+                dz =
+                    model.dropZone
+            in
+                if xy.x > dz.lowX then
+                    let
+                        toAdd =
+                            List.filter (.fileObject >> .isSelected) <| model.files
+                        resetFiles =
+                            List.map (\indexed -> {indexed | fileObject = FileObject.reset indexed.fileObject }) model.files
+                    in
+                        ( { model
+                            | queue = Array.append model.queue <| Array.fromList toAdd
+                            , files = resetFiles
+                          }, Cmd.none )
+                else
+                    ( model, Cmd.none )
 
 
 makeIndexedFileObjects : List FileRecord -> List IndexedFileObject
@@ -153,7 +181,7 @@ generateIdList len list =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-    ( { model | rootPath = Debug.log "new Path --asd " newPath }, Port.newDir newPath )
+    ( { model | rootPath = newPath }, Port.newDir newPath )
 
 
 
@@ -201,7 +229,8 @@ subscriptions model =
     Sub.batch
         [ Port.updateDir UpdateDir
         , Keyboard.ups KeyUp
-        , Sub.map Draging FileObject.Draging
+        , Mouse.downs MouseDowns
+        , Mouse.ups MouseUps
         ]
 
 
@@ -221,12 +250,12 @@ view model =
 audioPlayer : Model -> Html Msg
 audioPlayer model =
     case (Array.get model.currentSong model.queue) of
-        Just fileRecord ->
+        Just indexedFileObject ->
             Html.div [ MyStyle.audioViewContainer ]
                 [ previousSongButton
                 , (Html.div [ MyStyle.floatLeft ]
                     [ Html.audio
-                        [ Attr.src fileRecord.path
+                        [ Attr.src indexedFileObject.fileObject.fileRecord.path
                         , Attr.type' "audio/mp3"
                         , Attr.controls True
                         , Attr.autoplay True
@@ -281,13 +310,13 @@ directoryNavigationView =
 subDirToHtml : FileRecord -> Html Msg
 subDirToHtml file =
     Html.li
-        [ MyStyle.songItem
+        [ MyStyle.songItem False
         , Events.onClick <| ClickSubDir file
         ]
         [ Html.text file.name ]
 
 
-queueView : Array FileRecord -> Int -> Html Msg
+queueView : Array IndexedFileObject -> Int -> Html Msg
 queueView queue currentSong =
     Html.div [ MyStyle.queueViewContainer ]
         [ Html.ul [ MyStyle.songList ]
@@ -300,16 +329,15 @@ queueView queue currentSong =
 -- Takes a currentSong, then is mapped with index over the queue
 
 
-queueToHtml : Int -> Int -> FileRecord -> Html Msg
-queueToHtml currentSong i file =
+queueToHtml : Int -> Int -> IndexedFileObject -> Html Msg
+queueToHtml currentSong i indexedFileObject =
     if (i == currentSong) then
         Html.li
-            [ MyStyle.songItem
-            , MyStyle.currentSong
+            [ MyStyle.songItem True
             ]
-            [ Html.text file.name ]
+            [ Html.text indexedFileObject.fileObject.fileRecord.name ]
     else
         Html.li
-            [ MyStyle.songItem
+            [ MyStyle.songItem False
             ]
-            [ Html.text file.name ]
+            [ Html.text indexedFileObject.fileObject.fileRecord.name ]

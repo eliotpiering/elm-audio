@@ -2,6 +2,8 @@ var ipc = require('electron').ipcRenderer;
 var Elm = require('./elm.js');
 var chromecast = require('electron-chromecast');
 var app = Elm.Player.fullscreen();
+var PouchDB = require('pouchdb');
+var db = new PouchDB('music_database');
 
 ipc.on('listDirectory', (event, message) => {
   app.ports.updateDir.send(message);

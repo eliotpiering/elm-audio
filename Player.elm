@@ -15,8 +15,9 @@ import Keyboard
 import Mouse
 import Focus
 import MyModels exposing (..)
-import FileObject
 import Window as Win
+import Audio
+import FileObject
 
 
 main : Program Never
@@ -72,8 +73,7 @@ type Msg
     = ClickFile Int FileObject.Msg
     | ClickSubDir FileRecord
     | NavigationBack
-    | NextSong
-    | PreviousSong
+    | AudioMsg Audio.Msg
     | UpdateDir DataModel
     | KeyUp Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
@@ -86,10 +86,10 @@ update action model =
         KeyUp keyCode ->
             case keyCode of
                 37 ->
-                    ( previousSong model, Cmd.none )
+                    ( Audio.previousSong model, Cmd.none )
 
                 39 ->
-                    ( nextSong model, Cmd.none )
+                    ( Audio.nextSong model, Cmd.none )
 
                 32 ->
                     ( model, Port.pause "null" )
@@ -101,18 +101,20 @@ update action model =
             let
                 newFiles =
                     (List.map
-                       (\indexed ->
-                          if indexed.id == id
-                          then
-                            {indexed
-                            | fileObject = fst
-                              <| FileObject.update msg indexed.fileObject
-                            }
-                          else
-                            indexed
-                       ) model.files)
+                        (\indexed ->
+                            if indexed.id == id then
+                                { indexed
+                                    | fileObject =
+                                        fst
+                                            <| FileObject.update msg indexed.fileObject
+                                }
+                            else
+                                indexed
+                        )
+                        model.files
+                    )
             in
-                (( { model | files = newFiles}
+                (( { model | files = newFiles }
                  , Cmd.none
                  )
                 )
@@ -125,11 +127,9 @@ update action model =
         NavigationBack ->
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
-        NextSong ->
-            ( nextSong model, Cmd.none )
+        AudioMsg msg ->
+          (Audio.update msg model, Cmd.none)
 
-        PreviousSong ->
-            ( previousSong model, Cmd.none )
 
         UpdateDir dataModel ->
             ( { model
@@ -151,13 +151,16 @@ update action model =
                     let
                         toAdd =
                             List.filter (.fileObject >> .isSelected) <| model.files
+
                         resetFiles =
-                            List.map (\indexed -> {indexed | fileObject = FileObject.reset indexed.fileObject }) model.files
+                            List.map (\indexed -> { indexed | fileObject = FileObject.reset indexed.fileObject }) model.files
                     in
                         ( { model
                             | queue = Array.append model.queue <| Array.fromList toAdd
                             , files = resetFiles
-                          }, Cmd.none )
+                          }
+                        , Cmd.none
+                        )
                 else
                     ( model, Cmd.none )
 
@@ -182,43 +185,6 @@ generateIdList len list =
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
     ( { model | rootPath = newPath }, Port.newDir newPath )
-
-
-
--- Helpers
-
-
-nextSong : Model -> Model
-nextSong model =
-    let
-        shouldReset =
-            model.currentSong >= (Array.length model.queue) - 1
-    in
-        if shouldReset then
-            { model
-                | currentSong = 0
-            }
-        else
-            { model
-                | currentSong = (model.currentSong + 1)
-            }
-
-
-previousSong : Model -> Model
-previousSong model =
-    let
-        shouldReset =
-            model.currentSong == 0
-    in
-        if shouldReset then
-            { model
-                | currentSong = (Array.length model.queue - 1)
-            }
-        else
-            { model
-                | currentSong = (model.currentSong - 1)
-            }
-
 
 
 -- SUBSCRIPTIONS
@@ -251,41 +217,9 @@ audioPlayer : Model -> Html Msg
 audioPlayer model =
     case (Array.get model.currentSong model.queue) of
         Just indexedFileObject ->
-            Html.div [ MyStyle.audioViewContainer ]
-                [ previousSongButton
-                , (Html.div [ MyStyle.floatLeft ]
-                    [ Html.audio
-                        [ Attr.src indexedFileObject.fileObject.fileRecord.path
-                        , Attr.type' "audio/mp3"
-                        , Attr.controls True
-                        , Attr.autoplay True
-                        , MyStyle.audioPlayer
-                        , Events.on "ended" (JsonD.succeed NextSong)
-                        ]
-                        []
-                    ]
-                  )
-                , nextSongButton
-                ]
-
+            Html.map (AudioMsg) (Audio.view indexedFileObject.fileObject.fileRecord.path)
         Nothing ->
             Html.div [] [ Html.text "------------- \x08\n                                                               -------------- \n Nothing playing" ]
-
-
-nextSongButton : Html Msg
-nextSongButton =
-    Html.div
-        [ MyStyle.floatLeft
-        ]
-        [ Html.div [ MyStyle.button, Events.onClick <| NextSong ] [ Html.text "NEXT -->" ] ]
-
-
-previousSongButton : Html Msg
-previousSongButton =
-    Html.div
-        [ MyStyle.floatLeft
-        ]
-        [ Html.div [ MyStyle.button, Events.onClick <| PreviousSong ] [ Html.text "<-- PREVIOUS" ] ]
 
 
 fileView : Model -> Html Msg

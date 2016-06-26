@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "electron-chromecast": "^1.0.6",
-    "pouchdb": "^5.4.4"
+    "jsmediatags": "^3.2.1",
+    "pouchdb": "^5.4.4",
+    "pouchdb-find": "^0.10.2",
+    "pouchdb-quick-search": "^1.1.2"
   }
 }

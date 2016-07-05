@@ -5,7 +5,11 @@ var createDatabase = require('./makeDatabase.js');
 
 module.exports = {
   destroyDatabase: function(){
-    return db.destroy();
+    return db.destroy().then(function(){
+      return true;
+    }).catch(function(err){
+      console.log(err);
+    });
   },
   createDatabase: function(){
     var _this = this;
@@ -20,8 +24,8 @@ module.exports = {
   },
   groupBy: function(key) {
     return db.allDocs({include_docs: true}).then(function(results){
-      return results.rows.filter(function(result){
-        return result.doc && result.doc.songs && result.doc.songs.length > 0;
+      return results.rows.filter(function(row){
+        return row.doc.songs && row.doc.songs.length > 0;
       });
     });
   },

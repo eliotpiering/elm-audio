@@ -38,15 +38,27 @@ function addSong(song) {
     songs: [song]
   };
 
-  db.get(song.album).then(function(albumDocument){
-    albumDocument.songs.concat(song);
-    db.put(albumDocument).then(successUpdate, failureUpdate);
-  }, function(err){
-    if (err.name == 'not_found') {
-      db.put(album).then(successUpdate, failureUpdate);
-    } else {
-      console.log("I don't really know what happened");
-    }
+  // db.get('mydoc').then(function(doc) {
+  //   return db.put({
+  //     _id: 'mydoc',
+  //     _rev: doc._rev,
+  //     title: "Let's Dance"
+  //   });
+
+  return db.get(song.album)
+    .then(function(albumDocument){
+      db.put({
+        _id: albumDocument._id,
+        _rev: albumDocument._rev,
+        artist: albumDocument.artist,
+        songs: albumDocument.songs.concat(song)
+      }).then(successUpdate, failureUpdate);
+    }).catch(function(err){
+      if (err.name == 'not_found') {
+        db.put(album).then(successUpdate, failureUpdate);
+      } else {
+        console.log("I don't really know what happened");
+      }
   });
 }
 
@@ -72,14 +84,28 @@ function readDirectory(dir, filelist) {
 
 module.exports = function() {
   var filePaths = readDirectory(BASE_PATH, []);
-  filePaths.forEach(function(filePath){
-    lookupSong(filePath).then(function(song){
-      addSong(song);
-    }).catch(function(){
-      console.log("catch in lookupSong error");
-    });
-  });
-  return new Promise(function(resolve, reject){
-    resolve();
-  });
+  var firstFile = filePaths.pop();
+  return addSongsInSequence(firstFile, filePaths);
 };
+
+function addSongsInSequence(filePath, remainingFilePaths){
+  return lookupSong(filePath).then(function(song){
+    return addSong(song).then(function(){
+      if(remainingFilePaths.length > 0) {
+        var nextFilePath = remainingFilePaths.pop();
+        return addSongsInSequence(nextFilePath, remainingFilePaths);
+      } else {
+        return true;
+      }
+    }).catch(function(){
+      console.log("catch in addSong error");
+      var nextFilePath = remainingFilePaths.pop();
+      return addSongsInSequence(nextFilePath, remainingFilePaths);
+
+    });
+  }).catch(function(){
+    console.log("catch in lookupSong error");
+    var nextFilePath = remainingFilePaths.pop();
+    return addSongsInSequence(nextFilePath, remainingFilePaths);
+  });
+}

@@ -151,6 +151,7 @@ update action model =
         UpdateSongs songs ->
             ( { model
                 | songs = makeIndexedFileObjects songs
+                , groups = []
               }
             , Cmd.none
             )
@@ -158,6 +159,7 @@ update action model =
         UpdateGroups groups ->
             ( { model
                 | groups = makeIndexedGroupModels groups
+                , songs = []
               }
             , Cmd.none
             )

@@ -8,7 +8,10 @@ import MyStyle
 import Array
 import MyModels
 
-type alias ParentModel = MyModels.Model
+
+type alias ParentModel =
+    MyModels.Model
+
 
 type alias Model =
     String

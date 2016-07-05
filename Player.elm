@@ -18,6 +18,7 @@ import MyModels exposing (..)
 import Window as Win
 import Audio
 import FileObject
+import Group
 
 
 main : Program Never
@@ -55,13 +56,10 @@ initialModel : Model
 initialModel =
     { currentSong = 0
     , queue = Array.empty
-    , files = []
-    , subDirs =
-        []
-    , rootPath =
-        "/home/eliot/Music"
-        -- , dropZone = {lowX = Win.width / 2, highX = Win.width, lowY = 0, highY = Win.height }
-    , dropZone = { lowX = 400, highX = 800, lowY = 0, highY = 800 }
+    , songs = []
+    , groups = []
+    , rootPath = "/home/eliot/Music"
+    , dropZone = 400
     }
 
 
@@ -71,13 +69,20 @@ initialModel =
 
 type Msg
     = ClickFile Int FileObject.Msg
-    | ClickSubDir FileRecord
+    | ClickGroup Int Group.Msg
     | NavigationBack
     | AudioMsg Audio.Msg
-    | UpdateDir DataModel
+    | UpdateSongs (List FileObjectModel)
+    | UpdateGroups (List GroupModel)
     | KeyUp Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
     | MouseUps { x : Int, y : Int }
+    | SortByAlbum
+    | SortByArtist
+    | SortByTitle
+    | GroupBy String
+    | DestroyDatabase
+    | CreateDatabase
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -97,6 +102,24 @@ update action model =
                 _ ->
                     ( model, Cmd.none )
 
+        ClickGroup id msg ->
+            let
+                clickedGroup =
+                    Debug.log "clickedGroup" <| List.head
+                        <| List.filter (\indexedGroup -> indexedGroup.id == id) model.groups
+            in
+                case clickedGroup of
+                    Just indexedGroupModel ->
+                        ( { model
+                            | songs = makeIndexedFileObjects indexedGroupModel.model.songs
+                            , groups = []
+                          }
+                        , Cmd.none
+                        )
+
+                    Nothing ->
+                        ( model, Cmd.none )
+
         ClickFile id msg ->
             let
                 newFiles =
@@ -111,30 +134,30 @@ update action model =
                             else
                                 indexed
                         )
-                        model.files
+                        model.songs
                     )
             in
-                (( { model | files = newFiles }
+                (( { model | songs = newFiles }
                  , Cmd.none
                  )
                 )
-
-        ClickSubDir subDir ->
-            ( model
-            , Navigation.newUrl <| Debug.log "new url" (toUrl subDir.path)
-            )
 
         NavigationBack ->
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
         AudioMsg msg ->
-          (Audio.update msg model, Cmd.none)
+            ( Audio.update msg model, Cmd.none )
 
-
-        UpdateDir dataModel ->
+        UpdateSongs songs ->
             ( { model
-                | files = makeIndexedFileObjects dataModel.files
-                , subDirs = dataModel.subDirs
+                | songs = makeIndexedFileObjects songs
+              }
+            , Cmd.none
+            )
+
+        UpdateGroups groups ->
+            ( { model
+                | groups = makeIndexedGroupModels groups
               }
             , Cmd.none
             )
@@ -143,35 +166,58 @@ update action model =
             ( model, Cmd.none )
 
         MouseUps xy ->
-            let
-                dz =
-                    model.dropZone
-            in
-                if xy.x > dz.lowX then
-                    let
-                        toAdd =
-                            List.filter (.fileObject >> .isSelected) <| model.files
+            if xy.x > model.dropZone then
+                let
+                    toAdd =
+                        List.filter (.fileObject >> .isSelected) <| model.songs
 
-                        resetFiles =
-                            List.map (\indexed -> { indexed | fileObject = FileObject.reset indexed.fileObject }) model.files
-                    in
-                        ( { model
-                            | queue = Array.append model.queue <| Array.fromList toAdd
-                            , files = resetFiles
-                          }
-                        , Cmd.none
-                        )
-                else
-                    ( model, Cmd.none )
+                    resetFiles =
+                        List.map (\indexed -> { indexed | fileObject = FileObject.reset indexed.fileObject }) model.songs
+                in
+                    ( { model
+                        | queue = Array.append model.queue <| Array.fromList toAdd
+                        , songs = resetFiles
+                      }
+                    , Cmd.none
+                    )
+            else
+                ( model, Cmd.none )
+
+        SortByAlbum ->
+            ( model, Port.sortByAlbum "album" )
+
+        SortByArtist ->
+            ( model, Port.sortByArtist "artist" )
+
+        SortByTitle ->
+            ( model, Port.sortByTitle "title" )
+
+        GroupBy key ->
+            ( model, Port.groupBy key )
+
+        CreateDatabase ->
+            ( model, Port.createDatabase "foo" )
+
+        DestroyDatabase ->
+            ( model, Port.destroyDatabase "bar" )
 
 
-makeIndexedFileObjects : List FileRecord -> List IndexedFileObject
-makeIndexedFileObjects fileRecords =
+makeIndexedFileObjects : List FileObjectModel -> List IndexedFileObject
+makeIndexedFileObjects fileObjects =
     let
         ids =
-            generateIdList (List.length fileRecords) []
+            generateIdList (List.length fileObjects) []
     in
-        List.map2 (\id fileRecord -> { id = id, fileObject = (FileObject.init fileRecord) }) ids fileRecords
+        List.map2 IndexedFileObject ids fileObjects
+
+
+makeIndexedGroupModels : List GroupModel -> List IndexedGroupModel
+makeIndexedGroupModels groups =
+    let
+        ids =
+            generateIdList (List.length groups) []
+    in
+        List.map2 IndexedGroupModel ids groups
 
 
 generateIdList : Int -> List Int -> List Int
@@ -184,7 +230,8 @@ generateIdList len list =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-    ( { model | rootPath = newPath }, Port.newDir newPath )
+    ( { model | rootPath = newPath }, Port.sortByArtist newPath )
+
 
 
 -- SUBSCRIPTIONS
@@ -193,7 +240,8 @@ urlUpdate newPath model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Port.updateDir UpdateDir
+        [ Port.updateSongs UpdateSongs
+        , Port.updateGroups UpdateGroups
         , Keyboard.ups KeyUp
         , Mouse.downs MouseDowns
         , Mouse.ups MouseUps
@@ -208,7 +256,7 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ audioPlayer model
-        , fileView (model)
+        , songView (model)
         , queueView model.queue model.currentSong
         ]
 
@@ -217,17 +265,30 @@ audioPlayer : Model -> Html Msg
 audioPlayer model =
     case (Array.get model.currentSong model.queue) of
         Just indexedFileObject ->
-            Html.map (AudioMsg) (Audio.view indexedFileObject.fileObject.fileRecord.path)
+            Html.map (AudioMsg) (Audio.view indexedFileObject.fileObject.path)
+
         Nothing ->
-            Html.div [] [ Html.text "------------- \x08\n                                                               -------------- \n Nothing playing" ]
+            Html.div [] [ Html.text "-------------------------- \n Nothing playing" ]
 
 
-fileView : Model -> Html Msg
-fileView model =
+songView : Model -> Html Msg
+songView model =
     Html.div [ MyStyle.fileViewContainer ]
-        [ directoryNavigationView
-        , Html.ul [ MyStyle.songList ] (List.map subDirToHtml model.subDirs)
-        , Html.ul [ MyStyle.songList ] (List.map viewFileObject model.files)
+        [ navigationView
+        , Html.ul [ MyStyle.songList ] (List.map viewGroupModel model.groups)
+        , Html.ul [ MyStyle.songList ] (List.map viewFileObject model.songs)
+        ]
+
+
+navigationView : Html Msg
+navigationView =
+    Html.ul []
+        [ Html.li [ Events.onClick SortByAlbum ] [ Html.text "By Album" ]
+        , Html.li [ Events.onClick SortByArtist ] [ Html.text "By Artist" ]
+        , Html.li [ Events.onClick SortByTitle ] [ Html.text "By Song Title" ]
+        , Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
+        , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
+        , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]
         ]
 
 
@@ -236,18 +297,9 @@ viewFileObject { id, fileObject } =
     Html.map (ClickFile id) (FileObject.view fileObject)
 
 
-directoryNavigationView : Html Msg
-directoryNavigationView =
-    Html.div [ Events.onClick NavigationBack ] [ Html.mark [ MyStyle.upArrow ] [ Html.text "⇪" ] ]
-
-
-subDirToHtml : FileRecord -> Html Msg
-subDirToHtml file =
-    Html.li
-        [ MyStyle.songItem False
-        , Events.onClick <| ClickSubDir file
-        ]
-        [ Html.text file.name ]
+viewGroupModel : IndexedGroupModel -> Html Msg
+viewGroupModel { id, model } =
+    Html.map (ClickGroup id) (Group.view model)
 
 
 queueView : Array IndexedFileObject -> Int -> Html Msg
@@ -259,19 +311,15 @@ queueView queue currentSong =
         ]
 
 
-
--- Takes a currentSong, then is mapped with index over the queue
-
-
 queueToHtml : Int -> Int -> IndexedFileObject -> Html Msg
 queueToHtml currentSong i indexedFileObject =
     if (i == currentSong) then
         Html.li
             [ MyStyle.songItem True
             ]
-            [ Html.text indexedFileObject.fileObject.fileRecord.name ]
+            [ Html.text indexedFileObject.fileObject.title ]
     else
         Html.li
             [ MyStyle.songItem False
             ]
-            [ Html.text indexedFileObject.fileObject.fileRecord.name ]
+            [ Html.text indexedFileObject.fileObject.title ]

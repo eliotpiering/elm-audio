@@ -2,26 +2,48 @@ var ipc = require('electron').ipcRenderer;
 var Elm = require('./elm.js');
 // var chromecast = require('electron-chromecast');
 var app = Elm.Player.fullscreen();
-var dbQueries = require('./queryDatabase');
+var dbUtils = require('./dbUtils');
 
 // ipc.on('listDirectory', (event, message) => {
 //   app.ports.updateDir.send(message);
 // });
 
-// app.ports.newDir.subscribe(function(basePath) {
-//   if (basePath.length !== 0) {
-//     ipc.send('list-new-directory', basePath.toString());
-//   }
-// });
-
-dbQueries.byAlbum().then(function(songs){
-  var normalizedSongs = songs.docs.map(function(song){
-    var p = song.path || 'unknown';
-    var n = song.name || 'unknown';
-    return {path: p, name: n};
+app.ports.destroyDatabase.subscribe(function(){
+  dbUtils.destroyDatabase().then(function(){
+    updateSongs([]);
   });
-  var normalizedDataModel = {files: normalizedSongs, subDirs: []};
-  app.ports.updateDir.send(normalizedDataModel);
+});
+
+app.ports.createDatabase.subscribe(function(){
+  dbUtils.createDatabase().then(function(){
+    dbUtils.sortBy.title().then(function(songs){
+      updateSongs(songs);
+    });
+  });
+});
+
+app.ports.groupBy.subscribe(function(key){
+  dbUtils.groupBy(key).then(function(groups){
+    updateGroups(groups);
+  });
+});
+
+app.ports.sortByTitle.subscribe(function() {
+  dbUtils.sortBy.title().then(function(songs){
+    updateSongs(songs);
+  });
+});
+
+app.ports.sortByAlbum.subscribe(function() {
+  dbUtils.sortBy.album().then(function(songs){
+    updateSongs(songs);
+  });
+});
+
+app.ports.sortByArtist.subscribe(function() {
+  dbUtils.sortBy.artist().then(function(songs){
+    updateSongs(songs);
+  });
 });
 
 app.ports.pause.subscribe(function(){
@@ -34,6 +56,33 @@ app.ports.pause.subscribe(function(){
   }
 });
 
+function updateSongs(dbSongs) {
+  if (dbSongs.length > 0) {
+    var normalizedSongs = dbSongs.docs.map(normalizeSongs);
+    app.ports.updateSongs.send(normalizedSongs);
+  } else{
+    app.ports.updateSongs.send([]);
+  }
+};
+
+function normalizeSongs(song) {
+  if (!song.title) {song.title = 'unknown'}
+  if(song.track) {
+    song.track = Number(song.track.split("/")[0]);
+
+  } else {
+    song.track = 0;
+  }
+  song.isSelected = false;
+  return song;
+}
+
+function updateGroups(groups){
+  var normalizedGroups = groups.map(function(group){
+    return {title: group.id, songs: group.doc.songs.map(normalizeSongs)};
+  });
+  app.ports.updateGroups.send(normalizedGroups);
+}
 
 // var castConfig = {
 //   sessionRequest: {appId: "elm-audio"},
@@ -66,9 +115,3 @@ app.ports.pause.subscribe(function(){
 //   console.log("failure");
 //   console.log(arguments);
 // }
-
-
-function runQuery(){
-  var q = require('./queryDatabase');
-  console.log(q);
-}

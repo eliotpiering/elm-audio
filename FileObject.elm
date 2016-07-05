@@ -6,9 +6,8 @@ import MyModels exposing (..)
 import MyStyle exposing (..)
 
 
-init : FileRecord -> FileObjectModel
-init fileRecord =
-    { fileRecord = fileRecord, isSelected = False }
+init : FileObjectModel -> FileObjectModel
+init fileObjectModel = fileObjectModel
 
 
 type Msg
@@ -28,7 +27,7 @@ view model =
         [ MyStyle.songItem model.isSelected
         , Events.onClick <| ClickFile
         ]
-        [ Html.text model.fileRecord.name ]
+        [ Html.text model.title ]
 
 
 reset : FileObjectModel -> FileObjectModel

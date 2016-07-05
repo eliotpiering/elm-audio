@@ -1,43 +1,38 @@
 module MyModels exposing (..)
 
 import Array exposing (Array)
-import Drag
 
 
 type alias Model =
     { currentSong : Int
-    , files : List IndexedFileObject
-    , subDirs : List FileRecord
+    , songs : List IndexedFileObject
+    , groups : List IndexedGroupModel
     , queue : Array IndexedFileObject
     , rootPath : String
-    , dropZone :
-        { lowX : Int
-        , highX : Int
-        , lowY : Int
-        , highY : Int
-        }
-    }
-
-
-type alias FileRecord =
-    { path : String
-    , name : String
-    }
-
-
-type alias DataModel =
-    { files : List FileRecord
-    , subDirs : List FileRecord
+    , dropZone : Int
     }
 
 
 type alias FileObjectModel =
-    { fileRecord : FileRecord
+    { path : String
+    , title : String
+    , artist : String
+    , album : String
+    , track : Int
     , isSelected : Bool
     }
 
 
+type alias GroupModel =
+    { title : String
+    , songs : List FileObjectModel
+    }
+
 type alias IndexedFileObject =
     { id : Int
     , fileObject : FileObjectModel
+    }
+type alias IndexedGroupModel =
+    { id : Int
+    , model : GroupModel
     }

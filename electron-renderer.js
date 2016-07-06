@@ -28,12 +28,6 @@ app.ports.groupBy.subscribe(function(key){
   });
 });
 
-app.ports.sortBy.subscribe(function(key) {
-  dbUtils.sortBy(key).then(function(songs){
-    updateSongs(songs);
-  });
-});
-
 app.ports.pause.subscribe(function(){
   var player = document.getElementsByTagName("audio")[0];
   if (!player)  {return;}

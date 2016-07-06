@@ -77,7 +77,6 @@ type Msg
     | KeyUp Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
     | MouseUps { x : Int, y : Int }
-    | SortBy String
     | GroupBy String
     | DestroyDatabase
     | CreateDatabase
@@ -184,9 +183,6 @@ update action model =
             else
                 ( model, Cmd.none )
 
-        SortBy key ->
-            ( model, Port.sortBy key )
-
         GroupBy key ->
             ( model, Port.groupBy key )
 
@@ -225,7 +221,7 @@ generateIdList len list =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-    ( { model | rootPath = newPath }, (Port.sortBy newPath) )
+    ( { model | rootPath = newPath }, (Port.groupBy newPath) )
 
 
 
@@ -278,10 +274,7 @@ songView model =
 navigationView : Html Msg
 navigationView =
     Html.ul []
-        [ Html.li [ Events.onClick (SortBy "album") ] [ Html.text "By Album" ]
-        , Html.li [ Events.onClick (SortBy "artist") ] [ Html.text "By Artist" ]
-        , Html.li [ Events.onClick (SortBy "title") ] [ Html.text "By Song Title" ]
-        , Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
+        [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
         , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
         , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]

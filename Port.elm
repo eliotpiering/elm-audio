@@ -4,7 +4,6 @@ import MyModels exposing (FileObjectModel, GroupModel)
 port updateSongs : (List FileObjectModel -> msg) -> Sub msg
 port updateGroups : (List GroupModel -> msg)-> Sub msg
 
-port sortBy : String -> Cmd msg
 port groupBy : String -> Cmd msg
 
 port createDatabase : String -> Cmd msg

@@ -29,27 +29,5 @@ module.exports = {
         return doc.songs && doc.songs.length > 0 && doc.type == key;
       });
     });
-  },
-
-  sortBy: function(key) {
-    return db.createIndex({
-      index: {fields: [key]}
-    }).then(function(){
-      var sel = {};
-      sel[key] = {$gt: null};
-      return db.find({
-        selector: sel,
-        sort: [key]
-      });
-    });
-  },
-
-  findBy: {
-    album: function(albumName) {
-      return db.find({
-        selector: {album: {$eq: albumName}},
-        sort: ['track']
-      });
-    }
   }
 };

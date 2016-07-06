@@ -21,20 +21,26 @@ audioViewContainer =
 
 fileViewContainer =
     style
-        [ ( "width", "50%" )
+        [ ( "width", "49%" )
         , ( "float", "left" )
         , ( "-webkit-user-select", "none" )
           -- so can't highlight
         ]
 
 
-queueViewContainer =
-    style
-        [ ( "width", "50%" )
-        , ( "float", "right" )
-        , ( "-webkit-user-select", "none" )
-          -- so can't highlight
-        ]
+queueViewContainer canDrop =
+    let
+        baseStyle =
+            [ ( "width", "49%" )
+            , ( "float", "right" )
+            , ("min-height", "400px" )
+            , ( "-webkit-user-select", "none" )
+            ]
+    in
+        if canDrop then
+            style <| baseStyle ++ [("border", "solid black 2px")]
+        else
+            style baseStyle
 
 
 songList =
@@ -73,6 +79,7 @@ dragging { x, y } isDragging =
                 [ ( "position", "absolute" )
                 , ( "left", xPos )
                 , ( "top", yPos )
+                , ( "z-index", "-1" )
                 ]
     else
         style []

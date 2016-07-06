@@ -7,10 +7,10 @@ type alias Model =
     { currentSong : Int
     , songs : List IndexedSongModel
     , groups : List IndexedGroupModel
-    , queue : Array IndexedSongModel
+    , queue : QueueModel
     , rootPath : String
-    , dropZone : Int
-    , currentDrag : { x : Int, y : Int }
+    , currentMousePos : { x : Int, y : Int }
+    , isDragging : Bool
     }
 
 
@@ -29,10 +29,19 @@ type alias GroupModel =
     , songs : List SongModel
     }
 
+
+type alias QueueModel =
+    { array : Array IndexedSongModel
+    , mouseOver : Bool
+    }
+
+
 type alias IndexedSongModel =
     { id : Int
     , model : SongModel
     }
+
+
 type alias IndexedGroupModel =
     { id : Int
     , model : GroupModel

@@ -36,7 +36,7 @@ nextSong : ParentModel -> ParentModel
 nextSong model =
     let
         shouldReset =
-            model.currentSong >= (Array.length model.queue) - 1
+            model.currentSong >= (Array.length model.queue.array) - 1
     in
         if shouldReset then
             { model
@@ -56,7 +56,7 @@ previousSong model =
     in
         if shouldReset then
             { model
-                | currentSong = (Array.length model.queue - 1)
+                | currentSong = (Array.length model.queue.array - 1)
             }
         else
             { model

@@ -19,6 +19,7 @@ import Window as Win
 import Audio
 import Song
 import Group
+import Queue
 
 
 main : Program Never
@@ -55,12 +56,12 @@ init s =
 initialModel : Model
 initialModel =
     { currentSong = 0
-    , queue = Array.empty
+    , queue = { array = Array.empty, mouseOver = False }
     , songs = []
     , groups = []
     , rootPath = "/home/eliot/Music"
-    , dropZone = 400
-    , currentDrag = { x = -1, y = -1 }
+    , currentMousePos = { x = 0, y = 0 }
+    , isDragging = False
     }
 
 
@@ -73,6 +74,7 @@ type Msg
     | ClickGroup Int Group.Msg
     | NavigationBack
     | AudioMsg Audio.Msg
+    | QueueMsg Queue.Msg
     | UpdateSongs (List SongModel)
     | UpdateGroups (List GroupModel)
     | KeyUp Keyboard.KeyCode
@@ -149,6 +151,9 @@ update action model =
         AudioMsg msg ->
             ( Audio.update msg model, Cmd.none )
 
+        QueueMsg msg ->
+            ( { model | queue = Queue.update msg model.queue }, Cmd.none )
+
         UpdateSongs songs ->
             ( { model
                 | songs = makeIndexedFileObjects songs
@@ -167,33 +172,26 @@ update action model =
 
         MouseDowns xy ->
             ( { model
-                | currentDrag = xy
-              }, Cmd.none )
+                | isDragging = True
+              }
+            , Cmd.none
+            )
 
         MouseUps xy ->
-          let resetFiles =
-              List.map (\indexed -> { indexed | model = Song.reset indexed.model }) model.songs
-          in
-            if xy.x > model.dropZone then
-                let
-                    toAdd =
-                        List.filter (.model >> .isDragging) <| model.songs
-                in
-                    ( { model
-                        | queue = Array.append model.queue <| Array.fromList toAdd
-                        , songs = resetFiles
-                        , currentDrag = { x = -1, y = -1 }
-                      }
-                    , Cmd.none
-                    )
-            else
-                ( { model | songs = resetFiles }, Cmd.none )
+            ( { model
+                | queue = Queue.drop model
+                , songs = List.map (\indexed -> { indexed | model = Song.reset indexed.model }) model.songs
+                , isDragging = False
+              }
+            , Cmd.none
+            )
 
         MouseMoves xy ->
             ( { model
-                | currentDrag = xy
-              }, Cmd.none )
-
+                | currentMousePos = xy
+              }
+            , Cmd.none
+            )
 
         GroupBy key ->
             ( model, Port.groupBy key )
@@ -263,19 +261,19 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ audioPlayer model
-        , songView (model)
-        , queueView model.queue model.currentSong
+        , songView model
+        , queueView model
         ]
 
 
 audioPlayer : Model -> Html Msg
 audioPlayer model =
-    case (Array.get model.currentSong model.queue) of
+    case (Array.get model.currentSong model.queue.array) of
         Just indexedFileObject ->
-            Html.map (AudioMsg) (Audio.view indexedFileObject.model.path)
+            Html.map AudioMsg (Audio.view indexedFileObject.model.path)
 
         Nothing ->
-            Html.div [] [ Html.text "-------------------------- \n Nothing playing" ]
+            Html.div [] [ Html.text "------------------------ Nothing playing" ]
 
 
 songView : Model -> Html Msg
@@ -283,8 +281,13 @@ songView model =
     Html.div [ MyStyle.fileViewContainer ]
         [ navigationView
         , Html.ul [ MyStyle.songList ] (List.map viewGroupModel model.groups)
-        , Html.ul [ MyStyle.songList ] (List.map (viewFileObject model.currentDrag) model.songs)
+        , Html.ul [ MyStyle.songList ] (List.map (viewFileObject model.currentMousePos) model.songs)
         ]
+
+
+queueView : Model -> Html Msg
+queueView model =
+    Html.map QueueMsg (Queue.view model.queue model.currentSong model.isDragging)
 
 
 navigationView : Html Msg
@@ -298,7 +301,7 @@ navigationView =
         ]
 
 
-viewFileObject :  { x : Int, y : Int } -> IndexedSongModel -> Html Msg
+viewFileObject : { x : Int, y : Int } -> IndexedSongModel -> Html Msg
 viewFileObject dragPos { id, model } =
     Html.map (SongMsg id) (Song.view model dragPos)
 
@@ -306,26 +309,3 @@ viewFileObject dragPos { id, model } =
 viewGroupModel : IndexedGroupModel -> Html Msg
 viewGroupModel { id, model } =
     Html.map (ClickGroup id) (Group.view model)
-
-
-queueView : Array IndexedSongModel -> Int -> Html Msg
-queueView queue currentSong =
-    Html.div [ MyStyle.queueViewContainer ]
-        [ Html.ul [ MyStyle.songList ]
-            <| Array.toList
-            <| Array.indexedMap (queueToHtml currentSong) queue
-        ]
-
-
-queueToHtml : Int -> Int -> IndexedSongModel -> Html Msg
-queueToHtml currentSong i indexedFileObject =
-    if (i == currentSong) then
-        Html.li
-            [ MyStyle.songItem True
-            ]
-            [ Html.text indexedFileObject.model.title ]
-    else
-        Html.li
-            [ MyStyle.songItem False
-            ]
-            [ Html.text indexedFileObject.model.title ]

@@ -55,7 +55,7 @@ function normalizeSongs(song) {
   } else {
     song.track = 0;
   }
-  song.isSelected = false;
+  song.isDragging = false;
   return song;
 }
 

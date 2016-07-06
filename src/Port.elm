@@ -1,7 +1,7 @@
 port module Port exposing (..)
-import MyModels exposing (FileObjectModel, GroupModel)
+import MyModels exposing (SongModel, GroupModel)
 
-port updateSongs : (List FileObjectModel -> msg) -> Sub msg
+port updateSongs : (List SongModel -> msg) -> Sub msg
 port updateGroups : (List GroupModel -> msg)-> Sub msg
 
 port groupBy : String -> Cmd msg

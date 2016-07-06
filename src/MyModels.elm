@@ -5,32 +5,33 @@ import Array exposing (Array)
 
 type alias Model =
     { currentSong : Int
-    , songs : List IndexedFileObject
+    , songs : List IndexedSongModel
     , groups : List IndexedGroupModel
-    , queue : Array IndexedFileObject
+    , queue : Array IndexedSongModel
     , rootPath : String
     , dropZone : Int
+    , currentDrag : { x : Int, y : Int }
     }
 
 
-type alias FileObjectModel =
+type alias SongModel =
     { path : String
     , title : String
     , artist : String
     , album : String
     , track : Int
-    , isSelected : Bool
+    , isDragging : Bool
     }
 
 
 type alias GroupModel =
     { title : String
-    , songs : List FileObjectModel
+    , songs : List SongModel
     }
 
-type alias IndexedFileObject =
+type alias IndexedSongModel =
     { id : Int
-    , fileObject : FileObjectModel
+    , model : SongModel
     }
 type alias IndexedGroupModel =
     { id : Int

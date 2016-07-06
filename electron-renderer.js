@@ -16,8 +16,8 @@ app.ports.destroyDatabase.subscribe(function(){
 
 app.ports.createDatabase.subscribe(function(){
   dbUtils.createDatabase().then(function(){
-    dbUtils.sortBy.title().then(function(songs){
-      updateSongs(songs);
+    dbUtils.groupBy("album").then(function(groups){
+      updateGroups(groups);
     });
   });
 });
@@ -28,20 +28,8 @@ app.ports.groupBy.subscribe(function(key){
   });
 });
 
-app.ports.sortByTitle.subscribe(function() {
-  dbUtils.sortBy.title().then(function(songs){
-    updateSongs(songs);
-  });
-});
-
-app.ports.sortByAlbum.subscribe(function() {
-  dbUtils.sortBy.album().then(function(songs){
-    updateSongs(songs);
-  });
-});
-
-app.ports.sortByArtist.subscribe(function() {
-  dbUtils.sortBy.artist().then(function(songs){
+app.ports.sortBy.subscribe(function(key) {
+  dbUtils.sortBy(key).then(function(songs){
     updateSongs(songs);
   });
 });
@@ -63,13 +51,12 @@ function updateSongs(dbSongs) {
   } else{
     app.ports.updateSongs.send([]);
   }
-};
+}
 
 function normalizeSongs(song) {
-  if (!song.title) {song.title = 'unknown'}
+  if (!song.title) {song.title = 'unknown';}
   if(song.track) {
     song.track = Number(song.track.split("/")[0]);
-
   } else {
     song.track = 0;
   }
@@ -79,7 +66,8 @@ function normalizeSongs(song) {
 
 function updateGroups(groups){
   var normalizedGroups = groups.map(function(group){
-    return {title: group.id, songs: group.doc.songs.map(normalizeSongs)};
+    var title = group.doc.title;
+    return {title: title, songs: group.doc.songs.map(normalizeSongs)};
   });
   app.ports.updateGroups.send(normalizedGroups);
 }

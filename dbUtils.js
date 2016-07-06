@@ -25,49 +25,31 @@ module.exports = {
   groupBy: function(key) {
     return db.allDocs({include_docs: true}).then(function(results){
       return results.rows.filter(function(row){
-        return row.doc.songs && row.doc.songs.length > 0;
+        var doc = row.doc;
+        return doc.songs && doc.songs.length > 0 && doc.type == key;
       });
     });
   },
 
-  sortBy: {
-    album: function() {
-      return db.createIndex({
-        index: {fields: ['album']}
-      }).then(function(){
-        return db.find({
-          selector: {album: {$gt: null}},
-          sort: ['album']
-        });
+  sortBy: function(key) {
+    return db.createIndex({
+      index: {fields: [key]}
+    }).then(function(){
+      var sel = {};
+      sel[key] = {$gt: null};
+      return db.find({
+        selector: sel,
+        sort: [key]
       });
-    },
-    artist: function() {
-      return db.createIndex({
-        index: {fields: ['artist']}
-      }).then(function(){
-        return db.find({
-          selector: {artist: {$gt: null}},
-          sort: ['artist']
-        });
-      });
-    },
-    title: function() {
-      return db.createIndex({
-        index: {fields: ['title']}
-      }).then(function(){
-        return db.find({
-          selector: {title: {$gt: null}},
-          sort: ['title']
-        });
-      });
-    }
+    });
   },
+
   findBy: {
     album: function(albumName) {
       return db.find({
         selector: {album: {$eq: albumName}},
         sort: ['track']
-      })
+      });
     }
   }
 };

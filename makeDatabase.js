@@ -4,7 +4,6 @@ var mediatags = require("jsmediatags");
 var BASE_PATH = "/home/eliot/Music";
 PouchDB.plugin(require('pouchdb-quick-search'));
 PouchDB.plugin(require('pouchdb-find'));
-
 var db = new PouchDB('music_database');
 
 function lookupSong(path) {
@@ -12,12 +11,12 @@ function lookupSong(path) {
     mediatags.read(path, {
       onSuccess: function(tag) {
         var tags = tag.tags;
-
+        var artist = tag.tags.TPE2 ? tag.tags.TPE2.data : tags.artist;
         resolve({
           _id: new Date().toISOString(),
           path: path,
           title: tags.title,
-          artist: tags.artist,
+          artist: artist,
           album: tags.album,
           track: tags.track
         });
@@ -32,33 +31,56 @@ function lookupSong(path) {
 }
 
 function addSong(song) {
+  return addArtistDocument(song).then(function(){
+    return addAlbumDocument(song);
+  }).catch(function(){
+    return addAlbumDocument(song);
+  });
+}
+
+function addAlbumDocument (song) {
+  var albumId = (song.album + "-album");
   var album = {
-    _id: song.album,
+    _id: albumId,
+    title: (song.album + " - " + song.artist),
     artist: song.artist,
+    type: "album",
     songs: [song]
   };
-
-  // db.get('mydoc').then(function(doc) {
-  //   return db.put({
-  //     _id: 'mydoc',
-  //     _rev: doc._rev,
-  //     title: "Let's Dance"
-  //   });
-
-  return db.get(song.album)
-    .then(function(albumDocument){
-      db.put({
-        _id: albumDocument._id,
-        _rev: albumDocument._rev,
-        artist: albumDocument.artist,
-        songs: albumDocument.songs.concat(song)
-      }).then(successUpdate, failureUpdate);
-    }).catch(function(err){
-      if (err.name == 'not_found') {
-        db.put(album).then(successUpdate, failureUpdate);
-      } else {
-        console.log("I don't really know what happened");
-      }
+  return db.get(albumId).then(function(albumDocument){
+    //Updating
+    album._rev = albumDocument._rev;
+    album.songs = album.songs.concat(albumDocument.songs);
+    db.put(album).then(successUpdate, failureUpdate);
+  }).catch(function(err){
+    if (err.name == 'not_found') {
+      //Creating
+      db.put(album).then(successUpdate, failureUpdate);
+    } else {
+      console.log("I don't really know what happened");
+    }
+  });
+}
+function addArtistDocument (song) {
+  var artistId = (song.artist + "-artist");
+  var artist = {
+    _id: artistId,
+    title: song.artist,
+    songs: [song],
+    type: "artist"
+  };
+  return db.get(artistId).then(function(artistDocument){
+    //Updating
+    artist._rev = artistDocument._rev;
+    artist.songs = artist.songs.concat(artistDocument.songs);
+    db.put(artist).then(successUpdate, failureUpdate);
+  }).catch(function(err){
+    if (err.name == 'not_found') {
+      //Creating
+      db.put(artist).then(successUpdate, failureUpdate);
+    } else {
+      console.log("I don't really know what happened");
+    }
   });
 }
 
@@ -82,12 +104,6 @@ function readDirectory(dir, filelist) {
   return filelist;
 }
 
-module.exports = function() {
-  var filePaths = readDirectory(BASE_PATH, []);
-  var firstFile = filePaths.pop();
-  return addSongsInSequence(firstFile, filePaths);
-};
-
 function addSongsInSequence(filePath, remainingFilePaths){
   return lookupSong(filePath).then(function(song){
     return addSong(song).then(function(){
@@ -109,3 +125,9 @@ function addSongsInSequence(filePath, remainingFilePaths){
     return addSongsInSequence(nextFilePath, remainingFilePaths);
   });
 }
+
+module.exports = function() {
+  var filePaths = readDirectory(BASE_PATH, []);
+  var firstFile = filePaths.pop();
+  return addSongsInSequence(firstFile, filePaths);
+};

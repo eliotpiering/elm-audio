@@ -77,9 +77,7 @@ type Msg
     | KeyUp Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
     | MouseUps { x : Int, y : Int }
-    | SortByAlbum
-    | SortByArtist
-    | SortByTitle
+    | SortBy String
     | GroupBy String
     | DestroyDatabase
     | CreateDatabase
@@ -105,7 +103,8 @@ update action model =
         ClickGroup id msg ->
             let
                 clickedGroup =
-                    Debug.log "clickedGroup" <| List.head
+                    Debug.log "clickedGroup"
+                        <| List.head
                         <| List.filter (\indexedGroup -> indexedGroup.id == id) model.groups
             in
                 case clickedGroup of
@@ -185,14 +184,8 @@ update action model =
             else
                 ( model, Cmd.none )
 
-        SortByAlbum ->
-            ( model, Port.sortByAlbum "album" )
-
-        SortByArtist ->
-            ( model, Port.sortByArtist "artist" )
-
-        SortByTitle ->
-            ( model, Port.sortByTitle "title" )
+        SortBy key ->
+            ( model, Port.sortBy key )
 
         GroupBy key ->
             ( model, Port.groupBy key )
@@ -232,7 +225,7 @@ generateIdList len list =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-    ( { model | rootPath = newPath }, Port.sortByArtist newPath )
+    ( { model | rootPath = newPath }, (Port.sortBy newPath) )
 
 
 
@@ -285,10 +278,11 @@ songView model =
 navigationView : Html Msg
 navigationView =
     Html.ul []
-        [ Html.li [ Events.onClick SortByAlbum ] [ Html.text "By Album" ]
-        , Html.li [ Events.onClick SortByArtist ] [ Html.text "By Artist" ]
-        , Html.li [ Events.onClick SortByTitle ] [ Html.text "By Song Title" ]
+        [ Html.li [ Events.onClick (SortBy "album") ] [ Html.text "By Album" ]
+        , Html.li [ Events.onClick (SortBy "artist") ] [ Html.text "By Artist" ]
+        , Html.li [ Events.onClick (SortBy "title") ] [ Html.text "By Song Title" ]
         , Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
+        , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
         , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
         , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]
         ]

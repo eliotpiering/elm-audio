@@ -22,6 +22,12 @@ app.ports.createDatabase.subscribe(function(){
   });
 });
 
+app.ports.textSearch.subscribe(function(value){
+  dbUtils.textSearch(value).then(function(groups){
+    updateGroups(groups);
+  });
+});
+
 app.ports.groupBy.subscribe(function(key){
   dbUtils.groupBy(key).then(function(groups){
     updateGroups(groups);

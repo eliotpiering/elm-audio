@@ -78,6 +78,7 @@ type Msg
     | MouseDowns { x : Int, y : Int }
     | MouseUps { x : Int, y : Int }
     | GroupBy String
+    | TextSearch String
     | DestroyDatabase
     | CreateDatabase
 
@@ -186,6 +187,9 @@ update action model =
         GroupBy key ->
             ( model, Port.groupBy key )
 
+        TextSearch value ->
+            ( model, Port.textSearch value )
+
         CreateDatabase ->
             ( model, Port.createDatabase "foo" )
 
@@ -276,6 +280,7 @@ navigationView =
     Html.ul []
         [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
+        , Html.input [Events.onInput TextSearch] []
         , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
         , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]
         ]

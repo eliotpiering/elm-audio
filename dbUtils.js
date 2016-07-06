@@ -1,5 +1,6 @@
 var PouchDB = require('pouchdb');
 PouchDB.plugin(require('pouchdb-find'));
+PouchDB.plugin(require('pouchdb-quick-search'));
 var db = new PouchDB('music_database');
 var createDatabase = require('./makeDatabase.js');
 
@@ -28,6 +29,15 @@ module.exports = {
         var doc = row.doc;
         return doc.songs && doc.songs.length > 0 && doc.type == key;
       });
+    });
+  },
+  textSearch: function(text) {
+    return db.search({
+      query: text,
+      fields: ['_id'],
+      include_docs: true
+    }).then(function(result){
+      return result.rows;
     });
   }
 };

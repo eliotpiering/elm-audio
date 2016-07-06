@@ -1,1 +1,1 @@
-elm make Player.elm --output elm.js
+elm make src/Player.elm --output elm.js

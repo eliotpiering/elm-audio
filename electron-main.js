@@ -1,4 +1,3 @@
-var fs = require('fs');
 var electron = require('electron');
 
 var app = electron.app;
@@ -26,41 +25,8 @@ app.on('ready', function() {
 
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
-  var initialData = listDirectory('/home/eliot/Music');
-  mainWindow.webContents.on('did-finish-load', function () {
-    mainWindow.webContents.send('listDirectory', initialData);
-  });
-
-  electron.ipcMain.on('list-new-directory', function(_event, basePath){
-    var data = listDirectory(basePath);
-    mainWindow.webContents.send('listDirectory', data);
-  });
-
   mainWindow.on('closed', function() {
     mainWindow = null;
   });
 
 });
-
-function listDirectory(basePath) {
-  console.log(basePath);
-  var filesAndSubDirs = fs.readdirSync(basePath);
-  var directories = [];
-  var files = [];
-  filesAndSubDirs.forEach(function(f){
-    var fullPath = basePath + '/' + f;
-
-    var stat = fs.statSync(fullPath);
-    var statObject = {name: f, path: fullPath};
-    if (stat.isDirectory()) {
-      directories.push(statObject);
-    } else if (stat.isFile()) {
-      files.push(statObject);
-    }
-  });
-  var dataObject = {
-    subDirs: directories,
-    files: files
-  };
-  return dataObject;
-}

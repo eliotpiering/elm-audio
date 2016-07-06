@@ -1,12 +1,7 @@
-var ipc = require('electron').ipcRenderer;
-var Elm = require('./elm.js');
+var Elm = require('./elm');
 // var chromecast = require('electron-chromecast');
 var app = Elm.Player.fullscreen();
-var dbUtils = require('./dbUtils');
-
-// ipc.on('listDirectory', (event, message) => {
-//   app.ports.updateDir.send(message);
-// });
+var dbUtils = require('./src/database/dbUtils');
 
 app.ports.destroyDatabase.subscribe(function(){
   dbUtils.destroyDatabase().then(function(){

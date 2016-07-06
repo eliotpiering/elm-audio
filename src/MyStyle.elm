@@ -8,14 +8,22 @@ type alias MyStyle =
     List ( String, String )
 
 
+playerContainer =
+    style
+        [ ( "overflow", "hidden" )
+        , ( "position", "relative" )
+        , ( "width", "100%" )
+        ]
+
+
 audioViewContainer =
     style
         [ ( "width", "100%" )
+        , ( "height", "100px" )
         , ( "margin-left", "auto" )
         , ( "margin-right", "auto" )
         , ( "clear", "both" )
         , ( "-webkit-user-select", "none" )
-          -- so can't highlight
         ]
 
 
@@ -24,7 +32,6 @@ fileViewContainer =
         [ ( "width", "49%" )
         , ( "float", "left" )
         , ( "-webkit-user-select", "none" )
-          -- so can't highlight
         ]
 
 
@@ -33,12 +40,17 @@ queueViewContainer canDrop =
         baseStyle =
             [ ( "width", "49%" )
             , ( "float", "right" )
-            , ("min-height", "400px" )
+            , ( "min-height", "400px" )
+            , ( "height", "100%" )
+            , ( "position", "absolute" )
+            , ( "right", "0" )
+            , ( "top", "100px" )
             , ( "-webkit-user-select", "none" )
+            ,  ( "overflow", "visible" )
             ]
     in
         if canDrop then
-            style <| baseStyle ++ [("border", "solid black 2px")]
+            style <| baseStyle ++ [ ( "border", "solid black 2px" ) ]
         else
             style baseStyle
 

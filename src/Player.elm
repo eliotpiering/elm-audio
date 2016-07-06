@@ -259,7 +259,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Html.div []
+    Html.div [MyStyle.playerContainer]
         [ audioPlayer model
         , songView model
         , queueView model
@@ -295,6 +295,7 @@ navigationView =
     Html.ul []
         [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
+        , Html.li [ Events.onClick (GroupBy "song") ] [ Html.text "Group By song" ]
         , Html.input [ Events.onInput TextSearch ] []
         , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
         , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]

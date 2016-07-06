@@ -24,9 +24,15 @@ app.ports.textSearch.subscribe(function(value){
 });
 
 app.ports.groupBy.subscribe(function(key){
-  dbUtils.groupBy(key).then(function(groups){
-    updateGroups(groups);
-  });
+  if (key === 'song') {
+    dbUtils.allSongs().then(function(songs){
+      updateSongs(songs);
+    });
+  } else {
+    dbUtils.groupBy(key).then(function(groups){
+      updateGroups(groups);
+    });
+  }
 });
 
 app.ports.pause.subscribe(function(){
@@ -41,7 +47,7 @@ app.ports.pause.subscribe(function(){
 
 function updateSongs(dbSongs) {
   if (dbSongs.length > 0) {
-    var normalizedSongs = dbSongs.docs.map(normalizeSongs);
+    var normalizedSongs = dbSongs.map(normalizeSongs);
     app.ports.updateSongs.send(normalizedSongs);
   } else{
     app.ports.updateSongs.send([]);

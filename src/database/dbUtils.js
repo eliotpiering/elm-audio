@@ -23,6 +23,17 @@ module.exports = {
       index: {fields: ['album', 'artist', 'title']}
     });
   },
+  allSongs: function() {
+    return db.allDocs({include_docs: true}).then(function(results){
+      var albums = results.rows.filter(function(row){
+        var doc = row.doc;
+        return doc.songs && doc.songs.length > 0 && doc.type == 'artist';
+      });
+      return albums.reduce(function(acc, album){
+        return acc.concat(album.doc.songs);
+      }, []);
+    });
+  },
   groupBy: function(key) {
     return db.allDocs({include_docs: true}).then(function(results){
       return results.rows.filter(function(row){

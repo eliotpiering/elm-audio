@@ -20,6 +20,7 @@ type alias SongModel =
     , artist : String
     , album : String
     , track : Int
+    , picture : String
     , isDragging : Bool
     }
 

@@ -263,6 +263,7 @@ view model =
         [ audioPlayer model
         , songView model
         , queueView model
+        , albumArtView model
         ]
 
 
@@ -289,6 +290,14 @@ queueView : Model -> Html Msg
 queueView model =
     Html.map QueueMsg (Queue.view model.queue model.currentSong model.isDragging)
 
+albumArtView : Model -> Html Msg
+albumArtView model =
+  case (Array.get model.currentSong model.queue.array) of
+      Just indexedSong  ->
+        Html.div [ MyStyle.albumArtContainer ]
+            [Html.img [Attr.src indexedSong.model.picture] [] ]
+      Nothing ->
+        Html.div [] [ Html.text "------------------------ Nothing playing" ]
 
 navigationView : Html Msg
 navigationView =

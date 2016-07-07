@@ -73,6 +73,7 @@ function updateGroups(groups){
   app.ports.updateGroups.send(normalizedGroups);
 }
 
+
 // var castConfig = {
 //   sessionRequest: {appId: "elm-audio"},
 //   sessionListener: function(session) {

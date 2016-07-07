@@ -18,7 +18,8 @@ function lookupSong(path) {
           title: tags.title,
           artist: artist,
           album: tags.album,
-          track: tags.track
+          track: tags.track,
+          picture: tags.picture
         });
       },
 
@@ -31,11 +32,27 @@ function lookupSong(path) {
 }
 
 function addSong(song) {
+  if (song.picture && song.picture.data) {
+    song.picture = convertPictureToBase64String(song.picture.data, song.picture.format);
+  } else {
+    song.picture = "no picture :(";
+  }
   return addArtistDocument(song).then(function(){
     return addAlbumDocument(song);
   }).catch(function(){
     return addAlbumDocument(song);
   });
+}
+
+function convertPictureToBase64String(buffer, imageFormat) {
+  var binary = '';
+  var bytes = new Uint8Array( buffer );
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode( bytes[ i ] );
+  }
+  var base64String = window.btoa( binary );
+  return "data:" + imageFormat + ";base64, " + base64String;
 }
 
 function addAlbumDocument (song) {

@@ -46,7 +46,7 @@ queueViewContainer canDrop =
             , ( "right", "0" )
             , ( "top", "100px" )
             , ( "-webkit-user-select", "none" )
-            ,  ( "overflow", "visible" )
+            , ( "overflow", "visible" )
             ]
     in
         if canDrop then
@@ -138,4 +138,14 @@ upArrow =
         , ( "padding-bottom", "5%" )
         , ( "padding-left", "30%" )
         , ( "padding-right", "30%" )
+        ]
+
+
+albumArtContainer =
+    style
+        [ ( "position", "absolute" )
+        , ( "top", "100px" )
+        , ( "right", "10px" )
+        , ( "z-index", "-2" )
+        , ( "-webkit-user-select", "none" )
         ]

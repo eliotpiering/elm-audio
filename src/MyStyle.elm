@@ -88,10 +88,19 @@ dragging { x, y } isDragging =
                 toString y ++ "px"
         in
             style
-                [ ( "position", "absolute" )
+                [ ( "position", "fixed" )
                 , ( "left", xPos )
                 , ( "top", yPos )
                 , ( "z-index", "-1" )
+                ]
+    else
+        style []
+
+
+mouseOver isMouseOver =
+    if isMouseOver then
+            style
+                [ ( "border-bottom", "1px solid black" )
                 ]
     else
         style []

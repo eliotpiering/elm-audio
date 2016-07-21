@@ -24,12 +24,15 @@ update msg model =
 
 view : SongModel -> {x:Int,y:Int} -> Html Msg
 view model dragPos =
-    Html.li
+    Html.tr
         [ MyStyle.songItem model.isDragging
         , MyStyle.dragging dragPos model.isDragging
         , Events.onMouseDown DragStart
         ]
-        [ Html.text model.title ]
+        [ Html.td [] [Html.text model.title]
+        , Html.td [] [Html.text model.artist]
+        , Html.td [] [Html.text model.album]
+        ]
 
 
 reset : SongModel -> SongModel

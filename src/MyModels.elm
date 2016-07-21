@@ -25,6 +25,18 @@ type alias SongModel =
     }
 
 
+type alias QueueSongModel =
+    { path : String
+    , title : String
+    , artist : String
+    , album : String
+    , track : Int
+    , picture : String
+    , isDragging : Bool
+    , isMouseOver : Bool
+    }
+
+
 type alias GroupModel =
     { title : String
     , songs : List SongModel
@@ -32,8 +44,15 @@ type alias GroupModel =
 
 
 type alias QueueModel =
-    { array : Array IndexedSongModel
+    { array : Array IndexedQueueSongModel
     , mouseOver : Bool
+    , mouseOverItem : Int
+    }
+
+
+type alias IndexedQueueSongModel =
+    { id : Int
+    , model : QueueSongModel
     }
 
 

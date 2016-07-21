@@ -56,7 +56,7 @@ init s =
 initialModel : Model
 initialModel =
     { currentSong = 0
-    , queue = { array = Array.empty, mouseOver = False }
+    , queue = { array = Array.empty, mouseOver = False, mouseOverItem = 1 }
     , songs = []
     , groups = []
     , rootPath = "/home/eliot/Music"
@@ -107,8 +107,7 @@ update action model =
         ClickGroup id msg ->
             let
                 clickedGroup =
-                    Debug.log "clickedGroup"
-                        <| List.head
+                        List.head
                         <| List.filter (\indexedGroup -> indexedGroup.id == id) model.groups
             in
                 case clickedGroup of
@@ -126,20 +125,19 @@ update action model =
         SongMsg id msg ->
             let
                 newSongs =
-                    Debug.log "new Songs "
-                        <| (List.map
-                                (\indexed ->
-                                    if indexed.id == id then
-                                        { indexed
-                                            | model =
-                                                fst
-                                                    <| Song.update msg indexed.model
-                                        }
-                                    else
-                                        indexed
-                                )
-                                model.songs
-                           )
+                    (List.map
+                        (\indexed ->
+                            if indexed.id == id then
+                                { indexed
+                                    | model =
+                                        fst
+                                            <| Song.update msg indexed.model
+                                }
+                            else
+                                indexed
+                        )
+                        model.songs
+                    )
             in
                 ( { model | songs = newSongs }
                 , Cmd.none
@@ -259,7 +257,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Html.div [MyStyle.playerContainer]
+    Html.div [ MyStyle.playerContainer ]
         [ audioPlayer model
         , songView model
         , queueView model
@@ -282,22 +280,31 @@ songView model =
     Html.div [ MyStyle.fileViewContainer ]
         [ navigationView
         , Html.ul [ MyStyle.songList ] (List.map viewGroupModel model.groups)
-        , Html.ul [ MyStyle.songList ] (List.map (viewFileObject model.currentMousePos) model.songs)
+        , Html.table [ MyStyle.songList ]
+            ([ Html.thead []
+                [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
+                ]
+             ]
+                ++ (List.map (viewFileObject model.currentMousePos) model.songs)
+            )
         ]
 
 
 queueView : Model -> Html Msg
 queueView model =
-    Html.map QueueMsg (Queue.view model.queue model.currentSong model.isDragging)
+    Html.map QueueMsg (Queue.view model)
+
 
 albumArtView : Model -> Html Msg
 albumArtView model =
-  case (Array.get model.currentSong model.queue.array) of
-      Just indexedSong  ->
-        Html.div [ MyStyle.albumArtContainer ]
-            [Html.img [Attr.src indexedSong.model.picture] [] ]
-      Nothing ->
-        Html.div [] [ Html.text "------------------------ Nothing playing" ]
+    case (Array.get model.currentSong model.queue.array) of
+        Just indexedSong ->
+            Html.div [ MyStyle.albumArtContainer ]
+                [ Html.img [ Attr.src indexedSong.model.picture ] [] ]
+
+        Nothing ->
+            Html.div [] [ Html.text "------------------------ Nothing playing" ]
+
 
 navigationView : Html Msg
 navigationView =

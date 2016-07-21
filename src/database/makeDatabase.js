@@ -6,28 +6,54 @@ PouchDB.plugin(require('pouchdb-quick-search'));
 PouchDB.plugin(require('pouchdb-find'));
 var db = new PouchDB('music_database');
 
+
+window.onerror = function(message, file, lineNumber) {
+  // need to do this to catch errors in the metatags.read
+  // hopefully this doesn't catch everything else :(
+
+  console.log("global onerror" + message + file + lineNumber);
+  return true;
+};
+
+ 
 function lookupSong(path) {
   return new Promise(function(resolve, reject) {
+    console.log(path);
+    var didCallback = false;
     mediatags.read(path, {
       onSuccess: function(tag) {
+        didCallback = true;
         var tags = tag.tags;
-        var artist = tag.tags.TPE2 ? tag.tags.TPE2.data : tags.artist;
+        var artist = tag.tags.TPE2 ? tag.tags.TPE2.data : tags.artist ? tags.artist : "unknown artist";
+        var album = tags.album ? tags.album : "unknown album";
+        var title = tags.title ? tags.title : "unknown title";
+        var picture = 'no picture'; // tags.picture ? tags.picture : "no picture";
+        var track = tags.track ? tags.track.toString() : "0";
         resolve({
           _id: new Date().toISOString(),
           path: path,
-          title: tags.title,
+          title: title,
           artist: artist,
-          album: tags.album,
-          track: tags.track,
-          picture: tags.picture
+          album: album,
+          track: track,
+          picture: picture
         });
       },
 
       onError: function(error) {
+        didCallback = true;
         console.log(':(', error.type, error.info);
         reject("error");
       }
     });
+    setTimeout(function(){
+      console.log("hit set timeout" + didCallback);
+      if (!didCallback) {
+        reject("error");
+      }
+
+    }, 10000)
+
   });
 }
 
@@ -144,6 +170,7 @@ function addSongsInSequence(filePath, remainingFilePaths){
 }
 
 module.exports = function() {
+
   var filePaths = readDirectory(BASE_PATH, []);
   var firstFile = filePaths.pop();
   return addSongsInSequence(firstFile, filePaths);

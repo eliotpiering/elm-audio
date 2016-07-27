@@ -7,13 +7,13 @@ PouchDB.plugin(require('pouchdb-find'));
 var db = new PouchDB('music_database');
 
 
-window.onerror = function(message, file, lineNumber) {
-  // need to do this to catch errors in the metatags.read
-  // hopefully this doesn't catch everything else :(
+// window.onerror = function(message, file, lineNumber) {
+//   // need to do this to catch errors in the metatags.read
+//   // hopefully this doesn't catch everything else :(
 
-  console.log("global onerror" + message + file + lineNumber);
-  return true;
-};
+//   console.log("global onerror" + message + file + lineNumber);
+//   return true;
+// };
 
  
 function lookupSong(path) {

@@ -2,6 +2,7 @@ module Queue exposing (view, update, Msg, drop)
 
 import Html exposing (Html)
 import Html.Events as Events
+import Html.Attributes as Attr
 import Html.App as Html
 import MyModels exposing (..)
 import MyStyle exposing (..)
@@ -81,6 +82,7 @@ drop parentModel =
                             | model =
                                 { songModel
                                     | isDragging = False
+                                    , isMouseOver = False
                                 }
                             , id = newId
                         }
@@ -109,11 +111,15 @@ drop parentModel =
                             <| Array.append left
                             <| Array.append reorderedQueueSongs
                             <| Array.append newSongs right
+                     , mouseOverItem = Array.length queueModel.array + 1
                 }
         else
             { queueModel
-                | array = resetQueue <|
-                    Array.filter (.model >> .isDragging >> not) queueModel.array
+                | array =
+                    resetQueue
+                        <| Debug.log "how many in filter"
+                        <| Array.filter (.model >> .isDragging >> not) queueModel.array
+                , mouseOverItem = Array.length queueModel.array
             }
 
 
@@ -141,11 +147,12 @@ getNewSongsToAdd songModels =
 view : ParentModel -> Html Msg
 view parent =
     Html.div
-        [ MyStyle.queueViewContainer parent.isDragging
+        [ Attr.id "queue-view-container"
+        , MyStyle.queueViewContainer parent.isDragging
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave
         ]
-        [ Html.ul [ MyStyle.songList ]
+        [ Html.ul []
             <| Array.toList
             <| Array.indexedMap (queueToHtml parent.currentSong parent.currentMousePos) parent.queue.array
         ]

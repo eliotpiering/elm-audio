@@ -2,6 +2,7 @@ module Group exposing (view, Msg)
 
 import Html exposing (Html)
 import Html.Events as Events
+import Html.Attributes as Attr
 import MyModels exposing (..)
 import MyStyle exposing (..)
 
@@ -22,10 +23,11 @@ type Msg
 --             ( { model | isSelected = not model.isSelected }, Cmd.none )
 
 
-view : GroupModel -> Html Msg
-view model =
+view : GroupModel -> Int -> Html Msg
+view model id =
     Html.li
-        [ MyStyle.songItem False
+        [ Attr.class "group-item"
         , Events.onClick <| ClickGroup
+        , Attr.id <| "group-model-" ++ (toString id)
         ]
         [ Html.text model.title ]

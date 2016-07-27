@@ -11,6 +11,7 @@ type alias Model =
     , rootPath : String
     , currentMousePos : { x : Int, y : Int }
     , isDragging : Bool
+    , keysBeingTyped : String
     }
 
 

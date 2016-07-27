@@ -2,6 +2,7 @@ module Song exposing (Msg, init, update, view, reset)
 
 import Html exposing (Html)
 import Html.Events as Events
+import Html.Attributes as Attr
 import MyModels exposing (..)
 import MyStyle exposing (..)
 
@@ -25,7 +26,7 @@ update msg model =
 view : SongModel -> {x:Int,y:Int} -> Html Msg
 view model dragPos =
     Html.tr
-        [ MyStyle.songItem model.isDragging
+        [ Attr.class "song-item"
         , MyStyle.dragging dragPos model.isDragging
         , Events.onMouseDown DragStart
         ]

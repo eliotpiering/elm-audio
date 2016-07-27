@@ -12,6 +12,7 @@ import Navigation
 import MyStyle
 import Port
 import Keyboard
+import Char
 import Mouse
 import Focus
 import MyModels exposing (..)
@@ -62,6 +63,7 @@ initialModel =
     , rootPath = "/home/eliot/Music"
     , currentMousePos = { x = 0, y = 0 }
     , isDragging = False
+    , keysBeingTyped = ""
     }
 
 
@@ -85,29 +87,66 @@ type Msg
     | TextSearch String
     | DestroyDatabase
     | CreateDatabase
+    | ResetKeysBeingTyped String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
         KeyUp keyCode ->
-            case keyCode of
-                37 ->
-                    ( Audio.previousSong model, Cmd.none )
+            let
+                textSearchUpdateHelper code =
+                    let
+                        cString =
+                            String.fromChar <| Char.fromCode code
 
-                39 ->
-                    ( Audio.nextSong model, Cmd.none )
+                        str =
+                            Debug.log "str is " <| model.keysBeingTyped ++ cString
 
-                32 ->
-                    ( model, Port.pause "null" )
+                        getGroupModelTitle =
+                            .model >> .title
 
-                _ ->
-                    ( model, Cmd.none )
+                        maybefirstMatch =
+                            List.head <| List.filter (\gm -> String.startsWith str (String.toUpper <| getGroupModelTitle gm)) model.groups
+                    in
+                        case maybefirstMatch of
+                            Just indexedGroupModel ->
+                                ( { model
+                                    | keysBeingTyped = model.keysBeingTyped ++ cString
+                                  }
+                                , Port.scrollToElement <| "group-model-" ++ (toString indexedGroupModel.id)
+                                )
+
+                            Nothing ->
+                                ( model, Port.scrollToElement "no-id" )
+            in
+                case keyCode of
+                    37 ->
+                        ( Audio.previousSong model, Cmd.none )
+
+                    39 ->
+                        ( Audio.nextSong model, Cmd.none )
+
+                    32 ->
+                        if (String.length model.keysBeingTyped > 0) then
+                            textSearchUpdateHelper 32
+                        else
+                            ( model, Port.pause "null" )
+
+                    c ->
+                        textSearchUpdateHelper c
+
+        ResetKeysBeingTyped str ->
+            let
+                nothing =
+                    Debug.log "reset keys " str
+            in
+                ( { model | keysBeingTyped = "" }, Cmd.none )
 
         ClickGroup id msg ->
             let
                 clickedGroup =
-                        List.head
+                    List.head
                         <| List.filter (\indexedGroup -> indexedGroup.id == id) model.groups
             in
                 case clickedGroup of
@@ -244,6 +283,7 @@ subscriptions model =
     Sub.batch
         [ Port.updateSongs UpdateSongs
         , Port.updateGroups UpdateGroups
+        , Port.resetKeysBeingTyped ResetKeysBeingTyped
         , Keyboard.ups KeyUp
         , Mouse.downs MouseDowns
         , Mouse.ups MouseUps
@@ -257,8 +297,9 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    Html.div [ MyStyle.playerContainer ]
+    Html.div [ Attr.id "main-container" ]
         [ audioPlayer model
+        , navigationView
         , songView model
         , queueView model
         , albumArtView model
@@ -277,17 +318,28 @@ audioPlayer model =
 
 songView : Model -> Html Msg
 songView model =
-    Html.div [ MyStyle.fileViewContainer ]
-        [ navigationView
-        , Html.ul [ MyStyle.songList ] (List.map viewGroupModel model.groups)
-        , Html.table [ MyStyle.songList ]
+    Html.div [ Attr.id "file-view-container" ]
+        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel model.groups)
+        , Html.table [ Attr.class "scroll-box" ]
             ([ Html.thead []
                 [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
                 ]
              ]
-                ++ (List.map (viewFileObject model.currentMousePos) model.songs)
+                ++ (List.map (viewFileObject model.currentMousePos) <| sortSongsByAlbumAndTrack model.songs)
             )
         ]
+
+sortSongsByAlbumAndTrack : List IndexedSongModel -> List IndexedSongModel
+sortSongsByAlbumAndTrack =
+    List.sortWith
+        (\s1 s2 ->
+            case compare s1.model.album s2.model.album of
+                EQ ->
+                    compare s1.model.track s2.model.track
+
+                greaterOrLess ->
+                    greaterOrLess
+        )
 
 
 queueView : Model -> Html Msg
@@ -299,16 +351,16 @@ albumArtView : Model -> Html Msg
 albumArtView model =
     case (Array.get model.currentSong model.queue.array) of
         Just indexedSong ->
-            Html.div [ MyStyle.albumArtContainer ]
+            Html.div [ Attr.id "album-art-container" ]
                 [ Html.img [ Attr.src indexedSong.model.picture ] [] ]
 
         Nothing ->
-            Html.div [] [ Html.text "------------------------ Nothing playing" ]
+            Html.div [] [ Html.text "nothing" ]
 
 
 navigationView : Html Msg
 navigationView =
-    Html.ul []
+    Html.ul [ Attr.id "navigation-view-container" ]
         [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
         , Html.li [ Events.onClick (GroupBy "song") ] [ Html.text "Group By song" ]
@@ -325,4 +377,4 @@ viewFileObject dragPos { id, model } =
 
 viewGroupModel : IndexedGroupModel -> Html Msg
 viewGroupModel { id, model } =
-    Html.map (ClickGroup id) (Group.view model)
+    Html.map (ClickGroup id) (Group.view model id)

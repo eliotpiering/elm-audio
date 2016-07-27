@@ -71,15 +71,15 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    Html.div [ MyStyle.audioViewContainer ]
+    Html.div [ Attr.id "audio-view-container" ]
         [ previousSongButton
-        , (Html.div [ MyStyle.floatLeft ]
+        , (Html.div [ Attr.class "button-container" ]
             [ Html.audio
-                [ Attr.src model
+                [ Attr.id "audio-player-container"
+                , Attr.src model
                 , Attr.type' "audio/mp3"
                 , Attr.controls True
                 , Attr.autoplay True
-                , MyStyle.audioPlayer
                 , Events.on "ended" (JsonD.succeed NextSong)
                 ]
                 []
@@ -91,15 +91,11 @@ view model =
 
 nextSongButton : Html Msg
 nextSongButton =
-    Html.div
-        [ MyStyle.floatLeft
-        ]
-        [ Html.div [ MyStyle.button, Events.onClick <| NextSong ] [ Html.text "NEXT -->" ] ]
+    Html.div [ Attr.class "button-container" ]
+        [ Html.div [ Attr.class "button", Events.onClick <| NextSong ] [ Html.text "NEXT -->" ] ]
 
 
 previousSongButton : Html Msg
 previousSongButton =
-    Html.div
-        [ MyStyle.floatLeft
-        ]
-        [ Html.div [ MyStyle.button, Events.onClick <| PreviousSong ] [ Html.text "<-- PREVIOUS" ] ]
+    Html.div [ Attr.class "button-container" ]
+        [ Html.div [ Attr.class "button", Events.onClick <| PreviousSong ] [ Html.text "<-- PREVIOUS" ] ]

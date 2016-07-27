@@ -1,5 +1,4 @@
 var Elm = require('./elm');
-// var chromecast = require('electron-chromecast');
 var app = Elm.Player.fullscreen();
 var dbUtils = require('./src/database/dbUtils');
 
@@ -15,6 +14,22 @@ app.ports.createDatabase.subscribe(function(){
       updateGroups(groups);
     });
   });
+});
+
+var lastTimeoutId;
+app.ports.scrollToElement.subscribe(function(value){
+  if (lastTimeoutId) {
+    window.clearTimeout(lastTimeoutId);
+  }
+  var element = document.getElementById(value);
+
+  if (element) {
+    element.scrollIntoView();
+  }
+
+  lastTimeoutId = window.setTimeout(function(){
+    app.ports.resetKeysBeingTyped.send("nothing");
+  }, 1000);
 });
 
 app.ports.textSearch.subscribe(function(value){
@@ -87,21 +102,23 @@ function updateGroups(groups){
 // chrome.cast.initialize(castConfig, castSuccess, castFailure);
 // chrome.cast.requestSession(castSuccess, castFailure);
 
-// // chromecast(function(recievers){
+require('electron-chromecast')(function(recievers){
 
-// //   return new Promise(function (resolve, reject) {
-// //     // Do some logic to choose a receiver, possibly ask the user through a UI
-// //     var chosenReceiver = receivers[0];
-// //     resolve(chosenReceiver);
-// //   });
-// // });
+  return new Promise(function (resolve, reject) {
+    // Do some logic to choose a receiver, possibly ask the user through a UI
+    var chosenReceiver = receivers[0];
+    resolve(chosenReceiver);
+  });
+}).then(castSuccess, castFailure);
 
-// function castSuccess(){
-//   console.log("success");
-//   console.log(arguments);
-// }
+function castSuccess(){
+  console.log("success");
+  console.log(arguments);
+}
 
-// function castFailure(){
-//   console.log("failure");
-//   console.log(arguments);
-// }
+function castFailure(){
+  console.log("failure");
+  console.log(arguments);
+}
+
+// c.

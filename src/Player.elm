@@ -6,6 +6,7 @@ import Html.Events as Events
 import Html.App as Html
 import Json.Decode as JsonD exposing (Decoder, (:=))
 import Array exposing (Array)
+import Dict exposing (Dict)
 import String
 import Debug
 import Navigation
@@ -21,6 +22,7 @@ import Audio
 import Song
 import Group
 import Queue
+import SortSongs
 
 
 main : Program Never
@@ -59,7 +61,7 @@ initialModel =
     { currentSong = 0
     , queue = { array = Array.empty, mouseOver = False, mouseOverItem = 1 }
     , songs = []
-    , groups = []
+    , groups = Dict.empty
     , rootPath = "/home/eliot/Music"
     , currentMousePos = { x = 0, y = 0 }
     , isDragging = False
@@ -73,7 +75,7 @@ initialModel =
 
 type Msg
     = SongMsg Int Song.Msg
-    | ClickGroup Int Group.Msg
+    | ClickGroup String Group.Msg
     | NavigationBack
     | AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
@@ -103,18 +105,18 @@ update action model =
                         str =
                             Debug.log "str is " <| model.keysBeingTyped ++ cString
 
-                        getGroupModelTitle =
-                            .model >> .title
+                        -- getGroupModelTitle =
+                        --     .model >> .title
 
                         maybefirstMatch =
-                            List.head <| List.filter (\gm -> String.startsWith str (String.toUpper <| getGroupModelTitle gm)) model.groups
+                            List.head <| List.filter (\(id, gm) -> String.startsWith str (String.toUpper <| gm.title)) <| Dict.toList model.groups
                     in
                         case maybefirstMatch of
-                            Just indexedGroupModel ->
+                            Just (id, groupModel) ->
                                 ( { model
                                     | keysBeingTyped = model.keysBeingTyped ++ cString
                                   }
-                                , Port.scrollToElement <| "group-model-" ++ (toString indexedGroupModel.id)
+                                , Port.scrollToElement <| "group-model-" ++ id
                                 )
 
                             Nothing ->
@@ -145,18 +147,25 @@ update action model =
 
         ClickGroup id msg ->
             let
-                clickedGroup =
-                    List.head
-                        <| List.filter (\indexedGroup -> indexedGroup.id == id) model.groups
+                clickedGroup = Dict.get id model.groups
             in
-                case clickedGroup of
-                    Just indexedGroupModel ->
-                        ( { model
-                            | songs = makeIndexedFileObjects indexedGroupModel.model.songs
-                            , groups = []
-                          }
-                        , Cmd.none
-                        )
+                case Dict.get id model.groups of
+                    Just groupModel ->
+                      case msg of
+                        Group.OpenGroup ->
+                            ( { model
+                                | songs = makeIndexedFileObjects groupModel.songs
+                                , groups = Dict.empty
+                              }
+                            , Cmd.none
+                            )
+
+                        anythingElse ->
+                          ( { model
+                              | groups = Dict.insert id (Group.update msg groupModel) model.groups
+                            }
+                          , Cmd.none
+                          )
 
                     Nothing ->
                         ( model, Cmd.none )
@@ -194,14 +203,14 @@ update action model =
         UpdateSongs songs ->
             ( { model
                 | songs = makeIndexedFileObjects songs
-                , groups = []
+                , groups = Dict.empty
               }
             , Cmd.none
             )
 
         UpdateGroups groups ->
             ( { model
-                | groups = makeIndexedGroupModels groups
+                | groups = makeGroupDictionary groups
                 , songs = []
               }
             , Cmd.none
@@ -252,13 +261,16 @@ makeIndexedFileObjects fileObjects =
         List.map2 IndexedSongModel ids fileObjects
 
 
-makeIndexedGroupModels : List GroupModel -> List IndexedGroupModel
-makeIndexedGroupModels groups =
+makeGroupDictionary : List GroupModel -> Dict String GroupModel
+makeGroupDictionary groups =
     let
         ids =
-            generateIdList (List.length groups) []
+            List.map toString <| generateIdList (List.length groups) []
+
+        pairs =
+            List.map2 (,) ids groups
     in
-        List.map2 IndexedGroupModel ids groups
+        List.foldl (\( id, group ) dict -> Dict.insert id group dict) Dict.empty pairs
 
 
 generateIdList : Int -> List Int -> List Int
@@ -319,27 +331,16 @@ audioPlayer model =
 songView : Model -> Html Msg
 songView model =
     Html.div [ Attr.id "file-view-container" ]
-        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel model.groups)
+        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel <| List.sortBy (snd >> .title ) <| Dict.toList model.groups)
         , Html.table [ Attr.class "scroll-box" ]
             ([ Html.thead []
                 [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
                 ]
              ]
-                ++ (List.map (viewFileObject model.currentMousePos) <| sortSongsByAlbumAndTrack model.songs)
+                ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
             )
         ]
 
-sortSongsByAlbumAndTrack : List IndexedSongModel -> List IndexedSongModel
-sortSongsByAlbumAndTrack =
-    List.sortWith
-        (\s1 s2 ->
-            case compare s1.model.album s2.model.album of
-                EQ ->
-                    compare s1.model.track s2.model.track
-
-                greaterOrLess ->
-                    greaterOrLess
-        )
 
 
 queueView : Model -> Html Msg
@@ -375,6 +376,6 @@ viewFileObject dragPos { id, model } =
     Html.map (SongMsg id) (Song.view model dragPos)
 
 
-viewGroupModel : IndexedGroupModel -> Html Msg
-viewGroupModel { id, model } =
+viewGroupModel : ( String, GroupModel ) -> Html Msg
+viewGroupModel ( id, model ) =
     Html.map (ClickGroup id) (Group.view model id)

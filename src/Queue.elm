@@ -8,6 +8,8 @@ import MyModels exposing (..)
 import MyStyle exposing (..)
 import Array exposing (Array)
 import QueueSong
+import SortSongs
+import Dict exposing (Dict)
 
 
 type alias ParentModel =
@@ -91,7 +93,7 @@ drop parentModel =
         if queueModel.mouseOver then
             let
                 newSongs =
-                    getNewSongsToAdd parentModel.songs
+                    Array.append (getNewSongsToAdd parentModel.songs) (getNewGroupsToAdd parentModel.groups)
 
                 reorderedQueueSongs =
                     Array.filter (.model >> .isDragging) queueModel.array
@@ -111,7 +113,7 @@ drop parentModel =
                             <| Array.append left
                             <| Array.append reorderedQueueSongs
                             <| Array.append newSongs right
-                     , mouseOverItem = Array.length queueModel.array + 1
+                    , mouseOverItem = Array.length queueModel.array + 1
                 }
         else
             { queueModel
@@ -126,28 +128,45 @@ drop parentModel =
 getNewSongsToAdd : List IndexedSongModel -> Array IndexedQueueSongModel
 getNewSongsToAdd songModels =
     Array.fromList
-        <| List.map
-            (\sm ->
-                { model =
-                    { path = sm.model.path
-                    , title = sm.model.title
-                    , artist = sm.model.artist
-                    , album = sm.model.album
-                    , track = sm.model.track
-                    , picture = sm.model.picture
-                    , isDragging = False
-                    , isMouseOver = False
-                    }
-                , id = 0
-                }
-            )
-        <| List.filter (.model >> .isDragging) songModels
+        <| List.map songModelToQueueModel
+        <| List.filter (.isDragging)
+        <| List.map .model songModels
+
+
+getNewGroupsToAdd : Dict String GroupModel -> Array IndexedQueueSongModel
+getNewGroupsToAdd dict =
+    let
+        selectedGroupModels =
+            dict |> Dict.values |> List.filter .isSelected
+
+        songModels =
+            SortSongs.byAlbumAndTrack <| List.foldl (\gm acc -> gm.songs ++ acc) [] selectedGroupModels
+    in
+        Array.fromList
+            <| List.map songModelToQueueModel songModels
+
+
+songModelToQueueModel : SongModel -> IndexedQueueSongModel
+songModelToQueueModel sm =
+    { model =
+        { path = sm.path
+        , title = sm.title
+        , artist = sm.artist
+        , album = sm.album
+        , track = sm.track
+        , picture = sm.picture
+        , isDragging = False
+        , isMouseOver = False
+        }
+    , id = 0
+    }
 
 
 view : ParentModel -> Html Msg
 view parent =
     Html.div
         [ Attr.id "queue-view-container"
+        , Attr.class "scroll-box"
         , MyStyle.queueViewContainer parent.isDragging
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave

@@ -27,6 +27,12 @@
     -webkit-user-select: none;
 }
 
+#navigation-view-container {
+    position: relative;
+    top: 100px;
+    -webkit-user-select: none;
+}
+
 #queue-view-container {
     position: fixed;
     top: 150px;

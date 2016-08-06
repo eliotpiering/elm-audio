@@ -51,3 +51,13 @@ mouseOver isMouseOver =
 
 currentSong =
     style [ ( "color", "white" ), ( "background-color", "black" ) ]
+
+
+isSelected isSelected =
+    if isSelected then
+        style
+            [ ( "color", "white" )
+            , ( "background-color", "black" )
+            ]
+    else
+        style []

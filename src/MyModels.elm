@@ -1,12 +1,13 @@
 module MyModels exposing (..)
 
 import Array exposing (Array)
+import Dict exposing (Dict)
 
 
 type alias Model =
     { currentSong : Int
     , songs : List IndexedSongModel
-    , groups : List IndexedGroupModel
+    , groups : Dict String GroupModel
     , queue : QueueModel
     , rootPath : String
     , currentMousePos : { x : Int, y : Int }
@@ -41,6 +42,8 @@ type alias QueueSongModel =
 type alias GroupModel =
     { title : String
     , songs : List SongModel
+    , isSelected : Bool
+    , isDragging : Bool
     }
 
 
@@ -63,7 +66,7 @@ type alias IndexedSongModel =
     }
 
 
-type alias IndexedGroupModel =
-    { id : Int
-    , model : GroupModel
-    }
+-- type alias IndexedGroupModel =
+--     { id : Int
+--     , model : GroupModel
+--     }

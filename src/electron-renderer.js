@@ -83,7 +83,7 @@ function normalizeSongs(song) {
 function updateGroups(groups){
   var normalizedGroups = groups.map(function(group){
     var title = group.doc.title;
-    return {title: title, songs: group.doc.songs.map(normalizeSongs)};
+    return {title: title, songs: group.doc.songs.map(normalizeSongs), isSelected: false, isDragging: false};
   });
   app.ports.updateGroups.send(normalizedGroups);
 }

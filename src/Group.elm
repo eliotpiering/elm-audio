@@ -24,6 +24,12 @@ update msg model =
         DragStop ->
             { model | isDragging = False }
 
+reset : GroupModel -> GroupModel
+reset model =
+  {model
+    | isSelected = False
+    , isDragging = False
+  }
 
 view : GroupModel -> String -> Html Msg
 view model id =
@@ -34,6 +40,6 @@ view model id =
         , Events.onMouseDown DragStart
         , Events.onMouseUp DragStop
         , Attr.id <| "group-model-" ++ id
-        , MyStyle.isSelected model.isSelected 
+        , MyStyle.isSelected model.isSelected
         ]
         [ Html.text model.title ]

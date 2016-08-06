@@ -107,12 +107,11 @@ update action model =
 
                         -- getGroupModelTitle =
                         --     .model >> .title
-
                         maybefirstMatch =
-                            List.head <| List.filter (\(id, gm) -> String.startsWith str (String.toUpper <| gm.title)) <| Dict.toList model.groups
+                            List.head <| List.filter (\( id, gm ) -> String.startsWith str (String.toUpper <| gm.title)) <| Dict.toList model.groups
                     in
                         case maybefirstMatch of
-                            Just (id, groupModel) ->
+                            Just ( id, groupModel ) ->
                                 ( { model
                                     | keysBeingTyped = model.keysBeingTyped ++ cString
                                   }
@@ -147,25 +146,26 @@ update action model =
 
         ClickGroup id msg ->
             let
-                clickedGroup = Dict.get id model.groups
+                clickedGroup =
+                    Dict.get id model.groups
             in
                 case Dict.get id model.groups of
                     Just groupModel ->
-                      case msg of
-                        Group.OpenGroup ->
-                            ( { model
-                                | songs = makeIndexedFileObjects groupModel.songs
-                                , groups = Dict.empty
-                              }
-                            , Cmd.none
-                            )
+                        case msg of
+                            Group.OpenGroup ->
+                                ( { model
+                                    | songs = makeIndexedFileObjects groupModel.songs
+                                    , groups = Dict.empty
+                                  }
+                                , Cmd.none
+                                )
 
-                        anythingElse ->
-                          ( { model
-                              | groups = Dict.insert id (Group.update msg groupModel) model.groups
-                            }
-                          , Cmd.none
-                          )
+                            anythingElse ->
+                                ( { model
+                                    | groups = Dict.insert id (Group.update msg groupModel) model.groups
+                                  }
+                                , Cmd.none
+                                )
 
                     Nothing ->
                         ( model, Cmd.none )
@@ -331,7 +331,7 @@ audioPlayer model =
 songView : Model -> Html Msg
 songView model =
     Html.div [ Attr.id "file-view-container" ]
-        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel <| List.sortBy (snd >> .title ) <| Dict.toList model.groups)
+        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel <| List.sortBy (snd >> .title) <| Dict.toList model.groups)
         , Html.table [ Attr.class "scroll-box" ]
             ([ Html.thead []
                 [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
@@ -340,7 +340,6 @@ songView model =
                 ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
             )
         ]
-
 
 
 queueView : Model -> Html Msg

@@ -43,7 +43,7 @@ toUrl path =
 
 fromUrl : String -> String
 fromUrl url =
-    String.dropLeft 1 <| Debug.log "from url " url
+    String.dropLeft 1 url
 
 
 urlParser : Navigation.Parser String
@@ -314,7 +314,7 @@ view model =
         , navigationView
         , songView model
         , queueView model
-        , albumArtView model
+        -- , albumArtView model
         ]
 
 
@@ -325,14 +325,14 @@ audioPlayer model =
             Html.map AudioMsg (Audio.view indexedFileObject.model.path)
 
         Nothing ->
-            Html.div [] [ Html.text "------------------------ Nothing playing" ]
+            Html.div [] []
 
 
 songView : Model -> Html Msg
 songView model =
-    Html.div [ Attr.id "file-view-container" ]
-        [ Html.ul [ Attr.class "scroll-box" ] (List.map viewGroupModel <| List.sortBy (snd >> .title) <| Dict.toList model.groups)
-        , Html.table [ Attr.class "scroll-box" ]
+    Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
+        [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) <| Dict.toList model.groups)
+        , Html.table []
             ([ Html.thead []
                 [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
                 ]

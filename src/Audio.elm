@@ -72,8 +72,8 @@ type Msg
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "audio-view-container" ]
-        [ previousSongButton
-        , (Html.div [ Attr.class "button-container" ]
+        -- [ previousSongButton
+        [ (Html.div [ ]
             [ Html.audio
                 [ Attr.id "audio-player-container"
                 , Attr.src model
@@ -85,7 +85,7 @@ view model =
                 []
             ]
           )
-        , nextSongButton
+        -- , nextSongButton
         ]
 
 

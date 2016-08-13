@@ -2,3 +2,5 @@ elm-stuff
 node_modules
 elm.js
 music_database*
+.DS_Store
+

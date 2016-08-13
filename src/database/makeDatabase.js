@@ -1,7 +1,7 @@
 var fs = require('fs');
 var PouchDB = require('pouchdb');
 var mediatags = require("jsmediatags");
-var BASE_PATH = "/home/eliot/Music";
+var BASE_PATH = "/Users/CrystalMartin/Music/iTunes/iTunes\ Media/Music/";
 PouchDB.plugin(require('pouchdb-quick-search'));
 PouchDB.plugin(require('pouchdb-find'));
 var db = new PouchDB('music_database');

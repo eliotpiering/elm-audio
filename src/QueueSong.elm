@@ -1,4 +1,4 @@
-module QueueSong exposing (Msg, init, update, view, reset)
+module QueueSong exposing (..) -- (Msg, init, update, view, reset)
 
 import Html exposing (Html)
 import Html.Events as Events
@@ -16,6 +16,7 @@ type Msg
     = DragStart
     | MouseEnter
     | MouseLeave
+    | SetCurrentSong
 
 type Prop
   = MouseEntered
@@ -30,6 +31,8 @@ update msg model =
             ( { model | isMouseOver = True }, Just MouseEntered)
         MouseLeave ->
             ( { model | isMouseOver = False }, Nothing)
+        SetCurrentSong ->
+            ( model, Nothing)
 
 
 
@@ -37,13 +40,14 @@ view : QueueSongModel -> { x : Int, y : Int } -> Bool -> Html Msg
 view model dragPos isCurrentSong =
     Html.li
         [ Attr.id "song-item" 
-        , MyStyle.dragging dragPos model.isDragging
+        -- , MyStyle.dragging dragPos model.isDragging
         , MyStyle.mouseOver model.isMouseOver
         , (if isCurrentSong then
             MyStyle.currentSong
            else
             MyStyle.none
           )
+        , Events.onClick SetCurrentSong
         , Events.onMouseDown DragStart
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave

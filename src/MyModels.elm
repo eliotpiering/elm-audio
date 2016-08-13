@@ -13,6 +13,7 @@ type alias Model =
     , currentMousePos : { x : Int, y : Int }
     , isDragging : Bool
     , keysBeingTyped : String
+    , isShiftDown : Bool
     }
 
 

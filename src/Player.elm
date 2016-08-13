@@ -22,6 +22,7 @@ import Audio
 import Song
 import Group
 import Queue
+import QueueSong
 import SortSongs
 
 
@@ -66,6 +67,7 @@ initialModel =
     , currentMousePos = { x = 0, y = 0 }
     , isDragging = False
     , keysBeingTyped = ""
+    , isShiftDown = False
     }
 
 
@@ -75,13 +77,14 @@ initialModel =
 
 type Msg
     = SongMsg Int Song.Msg
-    | ClickGroup String Group.Msg
+    | GroupMsg String Group.Msg
     | NavigationBack
     | AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
     | UpdateSongs (List SongModel)
     | UpdateGroups (List GroupModel)
     | KeyUp Keyboard.KeyCode
+    | KeyDown Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
     | MouseUps { x : Int, y : Int }
     | MouseMoves { x : Int, y : Int }
@@ -133,9 +136,18 @@ update action model =
                             textSearchUpdateHelper 32
                         else
                             ( model, Port.pause "null" )
+                    16 ->
+                      ({model | isShiftDown = False}, Cmd.none)
 
                     c ->
                         textSearchUpdateHelper c
+
+        KeyDown keyCode ->
+          case keyCode of
+            16 ->
+              ({ model | isShiftDown = True }, Cmd.none)
+            anythingElse ->
+              (model, Cmd.none)
 
         ResetKeysBeingTyped str ->
             let
@@ -144,7 +156,7 @@ update action model =
             in
                 ( { model | keysBeingTyped = "" }, Cmd.none )
 
-        ClickGroup id msg ->
+        GroupMsg id msg ->
             let
                 clickedGroup =
                     Dict.get id model.groups
@@ -160,12 +172,18 @@ update action model =
                                 , Cmd.none
                                 )
 
-                            anythingElse ->
-                                ( { model
-                                    | groups = Dict.insert id (Group.update msg groupModel) model.groups
-                                  }
-                                , Cmd.none
-                                )
+                            Group.SelectGroup ->
+                                let updatedGroups =
+                                      if model.isShiftDown then
+                                       model.groups
+                                      else
+                                        Dict.map (\id gm -> Group.reset gm) model.groups
+                                in
+                                  ( { model
+                                      | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
+                                    }
+                                  , Cmd.none
+                                  )
 
                     Nothing ->
                         ( model, Cmd.none )
@@ -198,7 +216,11 @@ update action model =
             ( Audio.update msg model, Cmd.none )
 
         QueueMsg msg ->
-            ( { model | queue = Queue.update msg model.queue }, Cmd.none )
+          case (Debug.log "which msg " msg) of
+            Queue.SongMsg queueNumber QueueSong.SetCurrentSong ->
+              ({model | currentSong = queueNumber}, Cmd.none)
+            otherMessages ->
+              ( { model | queue = Queue.update msg model.queue }, Cmd.none )
 
         UpdateSongs songs ->
             ( { model
@@ -227,6 +249,10 @@ update action model =
             ( { model
                 | queue = Queue.drop model
                 , songs = List.map (\indexed -> { indexed | model = Song.reset indexed.model }) model.songs
+                , groups = if model.queue.mouseOver then
+                             Dict.map (\id group-> Group.reset group) model.groups
+                           else
+                             model.groups
                 , isDragging = False
               }
             , Cmd.none
@@ -297,6 +323,7 @@ subscriptions model =
         , Port.updateGroups UpdateGroups
         , Port.resetKeysBeingTyped ResetKeysBeingTyped
         , Keyboard.ups KeyUp
+        , Keyboard.downs KeyDown
         , Mouse.downs MouseDowns
         , Mouse.ups MouseUps
         , Mouse.moves MouseMoves
@@ -377,4 +404,4 @@ viewFileObject dragPos { id, model } =
 
 viewGroupModel : ( String, GroupModel ) -> Html Msg
 viewGroupModel ( id, model ) =
-    Html.map (ClickGroup id) (Group.view model id)
+    Html.map (GroupMsg id) (Group.view model id)

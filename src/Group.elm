@@ -9,8 +9,6 @@ import MyStyle exposing (..)
 type Msg
     = OpenGroup
     | SelectGroup
-    | DragStart
-    | DragStop
 
 update : Msg -> GroupModel -> GroupModel
 update msg model =
@@ -19,10 +17,6 @@ update msg model =
              { model | isSelected = not model.isSelected }
         OpenGroup ->
              { model | isSelected = False}
-        DragStart ->
-            { model | isDragging = True }
-        DragStop ->
-            { model | isDragging = False }
 
 reset : GroupModel -> GroupModel
 reset model =
@@ -35,10 +29,8 @@ view : GroupModel -> String -> Html Msg
 view model id =
     Html.li
         [ Attr.class "group-item"
-        , Events.onClick <| SelectGroup
         , Events.onDoubleClick <| OpenGroup
-        , Events.onMouseDown DragStart
-        , Events.onMouseUp DragStop
+        , Events.onMouseDown SelectGroup
         , Attr.id <| "group-model-" ++ id
         , MyStyle.isSelected model.isSelected
         ]

@@ -1,4 +1,4 @@
-module Queue exposing (view, update, Msg, drop)
+module Queue exposing (..) -- (view, update, Msg, drop)
 
 import Html exposing (Html)
 import Html.Events as Events

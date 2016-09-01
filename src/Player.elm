@@ -24,6 +24,7 @@ import Group
 import Queue
 import QueueSong
 import SortSongs
+import Browser
 
 
 main : Program Never
@@ -61,8 +62,7 @@ initialModel : Model
 initialModel =
     { currentSong = 0
     , queue = { array = Array.empty, mouseOver = False, mouseOverItem = 1 }
-    , songs = []
-    , groups = Dict.empty
+    , items = Dict.empty
     , rootPath = "/home/eliot/Music"
     , currentMousePos = { x = 0, y = 0 }
     , isDragging = False
@@ -76,11 +76,12 @@ initialModel =
 
 
 type Msg
-    = SongMsg Int Song.Msg
-    | GroupMsg String Group.Msg
+    -- = SongMsg Int Song.Msg
+    = GroupMsg String Group.Msg
     | NavigationBack
     | AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
+    | BrowserMsg Browser.Msg
     | UpdateSongs (List SongModel)
     | UpdateGroups (List GroupModel)
     | KeyUp Keyboard.KeyCode
@@ -97,7 +98,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case action of
+    case Debug.log "Player msg is " action of
         KeyUp keyCode ->
             let
                 textSearchUpdateHelper code =
@@ -105,13 +106,9 @@ update action model =
                         cString =
                             String.fromChar <| Char.fromCode code
 
-                        str =
-                            Debug.log "str is " <| model.keysBeingTyped ++ cString
-
-                        -- getGroupModelTitle =
-                        --     .model >> .title
                         maybefirstMatch =
-                            List.head <| List.filter (\( id, gm ) -> String.startsWith str (String.toUpper <| gm.title)) <| Dict.toList model.groups
+                          Nothing
+                            -- List.head <| List.filter (\( id, item ) -> String.startsWith str (String.toUpper <| item.data.title)) <| Dict.toList model.items
                     in
                         case maybefirstMatch of
                             Just ( id, groupModel ) ->
@@ -157,57 +154,58 @@ update action model =
                 ( { model | keysBeingTyped = "" }, Cmd.none )
 
         GroupMsg id msg ->
-            let
-                clickedGroup =
-                    Dict.get id model.groups
-            in
-                case Dict.get id model.groups of
-                    Just groupModel ->
-                        case msg of
-                            Group.OpenGroup ->
-                                ( { model
-                                    | songs = makeIndexedFileObjects groupModel.songs
-                                    , groups = Dict.empty
-                                  }
-                                , Cmd.none
-                                )
+          (model, Cmd.none)
+            -- let
+            --     clickedGroup =
+            --         Dict.get id model.groups
+            -- in
+            --     case Dict.get id model.groups of
+            --         Just groupModel ->
+            --             case msg of
+            --                 Group.OpenGroup ->
+            --                     ( { model
+            --                         | songs = makeSongItemDictionary groupModel.songs
+            --                         , groups = Dict.empty
+            --                       }
+            --                     , Cmd.none
+            --                     )
 
-                            Group.SelectGroup ->
-                                let updatedGroups =
-                                      if model.isShiftDown then
-                                       model.groups
-                                      else
-                                        Dict.map (\id gm -> Group.reset gm) model.groups
-                                in
-                                  ( { model
-                                      | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
-                                    }
-                                  , Cmd.none
-                                  )
+            --                 Group.SelectGroup ->
+            --                     let updatedGroups =
+            --                           if model.isShiftDown then
+            --                            model.groups
+            --                           else
+            --                             Dict.map (\id gm -> Group.reset gm) model.groups
+            --                     in
+            --                       ( { model
+            --                           | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
+            --                         }
+            --                       , Cmd.none
+            --                       )
 
-                    Nothing ->
-                        ( model, Cmd.none )
+            --         Nothing ->
+            --             ( model, Cmd.none )
 
-        SongMsg id msg ->
-            let
-                newSongs =
-                    (List.map
-                        (\indexed ->
-                            if indexed.id == id then
-                                { indexed
-                                    | model =
-                                        fst
-                                            <| Song.update msg indexed.model
-                                }
-                            else
-                                indexed
-                        )
-                        model.songs
-                    )
-            in
-                ( { model | songs = newSongs }
-                , Cmd.none
-                )
+        -- SongMsg id msg ->
+        --     let
+        --         newSongs = model.items
+        --             -- (List.map
+        --             --     (\indexed ->
+        --             --         if indexed.id == id then
+        --             --             { indexed
+        --             --                 | model =
+        --             --                     fst
+        --             --                         <| Song.update msg indexed.model
+        --             --             }
+        --             --         else
+        --             --             indexed
+        --             --     )
+        --             --     model.songs
+        --             -- )
+        --     in
+        --         ( { model | items = newSongs }
+        --         , Cmd.none
+        --         )
 
         NavigationBack ->
             ( model, Navigation.back <| Debug.log "nav back " 1 )
@@ -222,18 +220,57 @@ update action model =
             otherMessages ->
               ( { model | queue = Queue.update msg model.queue }, Cmd.none )
 
+        BrowserMsg msg ->
+          let (items', browserCmd) = Browser.update msg model.items in
+          case browserCmd of
+            Just (Browser.OpenGroup item) ->
+              case item.data of
+                Group groupModel ->
+                  let newSongs = makeSongItemDictionary groupModel.songs in
+                  ({model | items = newSongs}, Cmd.none)
+                other ->
+                  ({model | items = items'}, Cmd.none)
+            Just (Browser.AddSong item) ->
+              case item.data of
+                Song songModel ->
+                  -- TODO make queue model use items
+                  let songModelToQueueModel sm =
+                    { model =
+                        { path = sm.path
+                        , title = sm.title
+                        , artist = sm.artist
+                        , album = sm.album
+                        , track = sm.track
+                        , picture = sm.picture
+                        , isDragging = False
+                        , isMouseOver = False
+                        }
+                    , id = 0
+                   }
+                 in
+                    ({model
+                      | items = items'
+                      , queue = { mouseOver = False, mouseOverItem = 0, array = Array.push (songModelToQueueModel songModel) model.queue.array}
+                    }, Cmd.none)
+                other ->
+                  ({model | items = items'}, Cmd.none)
+
+            Nothing ->
+              ({model | items = items'}, Cmd.none)
+
+
         UpdateSongs songs ->
             ( { model
-                | songs = makeIndexedFileObjects songs
-                , groups = Dict.empty
+                | items = makeSongItemDictionary songs
+                -- , groups = Dict.empty
               }
             , Cmd.none
             )
 
         UpdateGroups groups ->
             ( { model
-                | groups = makeGroupDictionary groups
-                , songs = []
+                | items = makeGroupItemDictionary groups
+                -- , songs = Dict.empty
               }
             , Cmd.none
             )
@@ -246,17 +283,16 @@ update action model =
             )
 
         MouseUps xy ->
+          if model.queue.mouseOver then
             ( { model
-                | queue = Queue.drop model
-                , songs = List.map (\indexed -> { indexed | model = Song.reset indexed.model }) model.songs
-                , groups = if model.queue.mouseOver then
-                             Dict.map (\id group-> Group.reset group) model.groups
-                           else
-                             model.groups
+                | queue = Queue.update Queue.Drop model.queue
+                -- | items = makeGroupItemDictionary <| Item.update Item.Reset model.items
                 , isDragging = False
               }
             , Cmd.none
             )
+            else
+              (model, Cmd.none)
 
         MouseMoves xy ->
             ( { model
@@ -278,26 +314,26 @@ update action model =
             ( model, Port.destroyDatabase "bar" )
 
 
-makeIndexedFileObjects : List SongModel -> List IndexedSongModel
-makeIndexedFileObjects fileObjects =
+makeSongItemDictionary : List SongModel -> ItemDictionary
+makeSongItemDictionary songs =
+  makeItemDictionary <| List.map Song songs
+
+makeGroupItemDictionary : List GroupModel -> ItemDictionary
+makeGroupItemDictionary groups =
+  makeItemDictionary <| List.map Group groups
+
+makeItemDictionary : List ItemData -> ItemDictionary
+makeItemDictionary itemDatas =
     let
         ids =
-            generateIdList (List.length fileObjects) []
-    in
-        List.map2 IndexedSongModel ids fileObjects
-
-
-makeGroupDictionary : List GroupModel -> Dict String GroupModel
-makeGroupDictionary groups =
-    let
-        ids =
-            List.map toString <| generateIdList (List.length groups) []
-
+            List.map toString <| generateIdList (List.length itemDatas) []
         pairs =
-            List.map2 (,) ids groups
+            List.map2 (,) ids itemDatas
     in
-        List.foldl (\( id, group ) dict -> Dict.insert id group dict) Dict.empty pairs
-
+        List.foldl
+          (\( id, itemData) dict -> Dict.insert id {isSelected = False, isMouseOver = False, data = itemData }  dict)
+          Dict.empty
+          pairs
 
 generateIdList : Int -> List Int -> List Int
 generateIdList len list =
@@ -337,7 +373,8 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "main-container" ]
-        [ audioPlayer model
+        [ Html.div [Attr.id "banner"] []
+        , audioPlayer model
         , navigationView
         , songView model
         , queueView model
@@ -357,16 +394,18 @@ audioPlayer model =
 
 songView : Model -> Html Msg
 songView model =
-    Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
-        [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) <| Dict.toList model.groups)
-        , Html.table []
-            ([ Html.thead []
-                [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
-                ]
-             ]
-                ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
-            )
-        ]
+  let maybeMousePos = if model.isDragging then Just model.currentMousePos else Nothing in
+  Html.map BrowserMsg (Browser.view maybeMousePos model.items)
+    -- Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
+    --     [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) comparable -> v -> Dict comparable v<| Dict.toList model.groups)
+    --     , Html.table []
+    --         ([ Html.thead []
+    --             [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
+    --             ]
+    --          ]
+    --             ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
+    --         )
+    --     ]
 
 
 queueView : Model -> Html Msg
@@ -397,9 +436,9 @@ navigationView =
         ]
 
 
-viewFileObject : { x : Int, y : Int } -> IndexedSongModel -> Html Msg
-viewFileObject dragPos { id, model } =
-    Html.map (SongMsg id) (Song.view model dragPos)
+-- viewFileObject : { x : Int, y : Int } -> IndexedSongModel -> Html Msg
+-- viewFileObject dragPos { id, model } =
+--     Html.map (SongMsg id) (Song.view model dragPos)
 
 
 viewGroupModel : ( String, GroupModel ) -> Html Msg

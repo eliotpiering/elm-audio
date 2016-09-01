@@ -27,7 +27,7 @@ view : SongModel -> {x:Int,y:Int} -> Html Msg
 view model dragPos =
     Html.tr
         [ Attr.class "song-item"
-        , MyStyle.dragging dragPos model.isDragging
+        -- , MyStyle.dragging dragPos model.isDragging
         , Events.onMouseDown DragStart
         ]
         [ Html.td [] [Html.text model.title]

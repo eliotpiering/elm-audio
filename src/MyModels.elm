@@ -6,8 +6,8 @@ import Dict exposing (Dict)
 
 type alias Model =
     { currentSong : Int
-    , songs : List IndexedSongModel
-    , groups : Dict String GroupModel
+    , items : ItemDictionary
+    -- , groups : ItemDictionary
     , queue : QueueModel
     , rootPath : String
     , currentMousePos : { x : Int, y : Int }
@@ -49,7 +49,7 @@ type alias GroupModel =
 
 
 type alias QueueModel =
-    { array : Array IndexedQueueSongModel
+    { array : Array ItemModel
     , mouseOver : Bool
     , mouseOverItem : Int
     }
@@ -67,7 +67,17 @@ type alias IndexedSongModel =
     }
 
 
--- type alias IndexedGroupModel =
---     { id : Int
---     , model : GroupModel
---     }
+type alias ItemDictionary =
+    Dict String ItemModel
+
+
+type alias ItemModel =
+    { isSelected : Bool
+    , isMouseOver : Bool
+    , data : ItemData
+    }
+
+
+type ItemData
+    = Song SongModel
+    | Group GroupModel

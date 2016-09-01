@@ -19,8 +19,9 @@ queueViewContainer canDrop =
         style []
 
 
-dragging { x, y } isDragging =
-    if isDragging then
+dragging maybeDragPos =
+  case maybeDragPos of
+    Just {x, y} ->
         let
             xPos =
                 toString x ++ "px"
@@ -36,7 +37,7 @@ dragging { x, y } isDragging =
                 , ( "color", "white" )
                 , ( "background-color", "black" )
                 ]
-    else
+    Nothing ->
         style []
 
 

@@ -9,10 +9,14 @@ import Html.App as Html
 import MyModels exposing (..)
 import MyStyle exposing (..)
 import Array exposing (Array)
-import QueueSong
+
+
+-- import QueueSong
+
 import SortSongs
 import Dict exposing (Dict)
 import Item
+
 
 -- type alias ParentModel =
 --     Model
@@ -22,91 +26,122 @@ type Msg
     = MouseEnter
     | MouseLeave
     | ItemMsg Int Item.Msg
-    | SongMsg Int QueueSong.Msg
+      -- | SongMsg Int QueueSong.Msg
     | Drop (List ItemModel)
+
 
 type alias Pos =
     { x : Int, y : Int }
 
 
-update : Msg -> QueueModel -> QueueModel
+type QueueCmd
+    = UpdateCurrentSong Int
+
+
+update : Msg -> QueueModel -> ( QueueModel, Maybe QueueCmd )
 update msg model =
     case msg of
         MouseEnter ->
-            { model | mouseOver = True }
+            ( { model | mouseOver = True }, Nothing )
 
         MouseLeave ->
-            { model | mouseOver = False }
+            ( { model | mouseOver = False }, Nothing )
 
-        SongMsg id msg ->
-            let
-                updatedQueueSongsWithProps =
-                    (Array.map
-                        (\indexed ->
-                            if indexed.id == id then
-                                let
-                                    ( newModel, maybeMouseOverItemId ) =
-                                        QueueSong.update msg indexed.model
-                                in
-                                    case maybeMouseOverItemId of
-                                        Just _ ->
-                                            ( { indexed
-                                                | model = newModel
-                                              }
-                                            , Just id
-                                            )
+        -- SongMsg id msg ->
+        --   model
+        -- let
+        --     updatedQueueSongsWithProps =
+        --         (Array.map
+        --             (\indexed ->
+        --                 if indexed.id == id then
+        --                     let
+        --                         ( newModel, maybeMouseOverItemId ) =
+        --                             QueueSong.update msg indexed.model
+        --                     in
+        --                         case maybeMouseOverItemId of
+        --                             Just _ ->
+        --                                 ( { indexed
+        --                                     | model = newModel
+        --                                   }
+        --                                 , Just id
+        --                                 )
+        --                             Nothing ->
+        --                                 ( { indexed
+        --                                     | model = newModel
+        --                                   }
+        --                                 , Nothing
+        --                                 )
+        --                 else
+        --                     ( indexed, Nothing )
+        --             )
+        --             model.array
+        --         )
+        -- in
+        --     { model
+        --         | array = Array.map fst updatedQueueSongsWithProps
+        --         , mouseOverItem = Maybe.withDefault (Array.length model.array) <| Maybe.oneOf <| Array.toList <| Array.map snd updatedQueueSongsWithProps
+        --     }
+        ItemMsg id msg ->
+            case Array.get id model.array of
+                Just item ->
+                    let
+                        ( item', itemCmd ) =
+                            Item.update msg item
 
-                                        Nothing ->
-                                            ( { indexed
-                                                | model = newModel
-                                              }
-                                            , Nothing
-                                            )
-                            else
-                                ( indexed, Nothing )
-                        )
-                        model.array
-                    )
-            in
-                { model
-                    | array = Array.map fst updatedQueueSongsWithProps
-                    , mouseOverItem = Maybe.withDefault (Array.length model.array) <| Maybe.oneOf <| Array.toList <| Array.map snd updatedQueueSongsWithProps
-                }
+                        model' =
+                            { model | array = Array.set id item' model.array }
+                    in
+                        case itemCmd of
+                            Just (Item.MouseEntered) ->
+                                ( { model' | mouseOverItem = id }, Nothing )
+
+                            Just (Item.DoubleClicked) ->
+                                ( model', Just <| UpdateCurrentSong id )
+
+                            anythingElse ->
+                                ( model', Nothing )
+
+                Nothing ->
+                    ( model, Nothing )
 
         Drop newItems ->
-            if model.mouseOver then
-              -- let
-              --     newSongs =
-              --         getNewItemsparentModel.songs) (getNewGroupsToAdd parentModel.groups)
-              --     -- reorderedQueueSongs =
-              --     --     Array.filter (.model >> .isDragging) queueModel.array
-              --     -- queueSongsNotDragging =
-              --     --     Array.filter (.model >> .isDragging >> not) queueModel.array
-              --     left =
-              --         Array.slice 0 queueModel.mouseOverItem) queueSongsNotDragging
-              --     right =
-              --         Array.slice queueModel.mouseOverItem (Array.length queueModel.array) queueSongsNotDragging
-              -- in
-                  -- { model
-                  --     | array =
-                  --         resetQueue
-                  --             <| Array.append (Array.fromList newItems) model.array
-                  --     --         <| Array.append newSongs right
-                  --     -- , mouseOverItem = Array.length queueModel.array + 1
-                  -- }
-              model
-            else
-              model
+            -- if model.mouseOver then
+            -- let
+            --     newItems =
+            --         getNewItemsparentModel.songs) (getNewGroupsToAdd parentModel.groups)
+            --     -- reorderedQueueSongs =
+            --     --     Array.filter (.model >> .isDragging) queueModel.array
+            --     -- queueSongsNotDragging =
+            --     --     Array.filter (.model >> .isDragging >> not) queueModel.array
+            let
+                left =
+                    Array.slice 0 (Debug.log "mouse over item " model.mouseOverItem) model.array
 
--- resetQueue : Array ItemModel -> Array ItemModel
--- resetQueue array =
---     Array.map
---         (\item ->
---                 { item
---                   | isSelected = False
---                   , isMouseOver = False
---                 }
---         )
+                right =
+                    Array.slice model.mouseOverItem (Array.length model.array) model.array
+
+                newArrayItems =
+                    Array.fromList <| SortSongs.byAlbumAndTrack newItems
+            in
+                ( { model
+                    | array =
+                        resetQueue
+                            <| Array.append left
+                            <| Array.append newArrayItems right
+                  }
+                , Nothing
+                )
+
+
+
+-- else
+--   model
+
+
+resetQueue : Array ItemModel -> Array ItemModel
+resetQueue =
+    Array.map (Item.update Item.Reset >> fst)
+
 
 
 -- drop : ParentModel -> QueueModel
@@ -155,31 +190,31 @@ update msg model =
 --         }
 --     , id = 0
 --     }
-
 -- view : Maybe Pos -> Array Item -> Html Msg
 -- view maybePos model =
 --     Html.div [ Attr.id "queue-view-container", Attr.class "scroll-box" ]
 --         [ Html.ul [] (Array.toList <| Array.map (itemToHtml maybePos) <| model) ]
 
 
-itemToHtml : Maybe Pos -> (Int, ItemModel) -> Html Msg
-itemToHtml maybePos ( id, item ) =
-    Html.map (ItemMsg id) (Item.view maybePos item)
+itemToHtml : Maybe Pos -> Int -> ( Int, ItemModel ) -> Html Msg
+itemToHtml maybePos currentSong ( id, item ) =
+    Html.map (ItemMsg id) (Item.view maybePos (id == currentSong) (toString id) item)
 
 
-view : Maybe Pos -> Array ItemModel -> Html Msg
-view maybePos model =
+view : Maybe Pos -> Int -> Array ItemModel -> Html Msg
+view maybePos currentSong model =
     Html.div
         [ Attr.id "queue-view-container"
         , Attr.class "scroll-box"
-        -- , MyStyle.queueViewContainer parent.isDragging
+          -- , MyStyle.queueViewContainer parent.isDragging
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave
         ]
         [ Html.ul []
             <| Array.toList
-            <| Array.indexedMap ((\id item -> itemToHtml maybePos (id, item) )) model
+            <| Array.indexedMap ((\id item -> itemToHtml maybePos currentSong ( id, item ))) model
         ]
+
 
 
 -- queueToHtml : Int -> { x : Int, y : Int } -> Int -> IndexedQueueSongModel -> Html Msg
@@ -189,8 +224,5 @@ view maybePos model =
 --             (i == currentSong)
 --     in
 --         Html.map (SongMsg i) (QueueSong.view indexedQueueSongModel.model dragPos isCurrentSong)
-
-
-
 -- -- Html.li [ MyStyle.songItem isCurrentSong ]
 -- --     [ Html.text iSongModel) indexedSongModel.model.title ]

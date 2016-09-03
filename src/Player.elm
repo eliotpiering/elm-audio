@@ -19,12 +19,19 @@ import Focus
 import MyModels exposing (..)
 import Window as Win
 import Audio
-import Song
-import Group
+
+
+-- import Song
+-- import Group
+
 import Queue
-import QueueSong
+
+
+-- import QueueSong
+
 import SortSongs
 import Browser
+import Helpers
 
 
 main : Program Never
@@ -62,7 +69,7 @@ initialModel : Model
 initialModel =
     { currentSong = 0
     , queue = { array = Array.empty, mouseOver = False, mouseOverItem = 1 }
-    , items = Dict.empty
+    , browser = Browser.initialModel
     , rootPath = "/home/eliot/Music"
     , currentMousePos = { x = 0, y = 0 }
     , isDragging = False
@@ -75,10 +82,11 @@ initialModel =
 -- UPDATE
 
 
-type Msg
+type
+    Msg
     -- = SongMsg Int Song.Msg
-    = GroupMsg String Group.Msg
-    | NavigationBack
+    -- = GroupMsg String Group.Msg
+    = NavigationBack
     | AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
     | BrowserMsg Browser.Msg
@@ -98,7 +106,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case Debug.log "Player msg is " action of
+    case action of
         KeyUp keyCode ->
             let
                 textSearchUpdateHelper code =
@@ -107,15 +115,14 @@ update action model =
                             String.fromChar <| Char.fromCode code
 
                         maybefirstMatch =
-                          Nothing
-                            -- List.head <| List.filter (\( id, item ) -> String.startsWith str (String.toUpper <| item.data.title)) <| Dict.toList model.items
+                            List.head <| List.filter (\( id, item ) -> String.startsWith model.keysBeingTyped (String.toUpper <| Helpers.getItemTitle item)) <| Dict.toList model.browser.items
                     in
                         case maybefirstMatch of
                             Just ( id, groupModel ) ->
                                 ( { model
                                     | keysBeingTyped = model.keysBeingTyped ++ cString
                                   }
-                                , Port.scrollToElement <| "group-model-" ++ id
+                                , Port.scrollToElement <| "group-item-" ++ id
                                 )
 
                             Nothing ->
@@ -133,18 +140,20 @@ update action model =
                             textSearchUpdateHelper 32
                         else
                             ( model, Port.pause "null" )
+
                     16 ->
-                      ({model | isShiftDown = False}, Cmd.none)
+                        ( { model | isShiftDown = False }, Cmd.none )
 
                     c ->
                         textSearchUpdateHelper c
 
         KeyDown keyCode ->
-          case keyCode of
-            16 ->
-              ({ model | isShiftDown = True }, Cmd.none)
-            anythingElse ->
-              (model, Cmd.none)
+            case keyCode of
+                16 ->
+                    ( { model | isShiftDown = True }, Cmd.none )
+
+                anythingElse ->
+                    ( model, Cmd.none )
 
         ResetKeysBeingTyped str ->
             let
@@ -153,42 +162,39 @@ update action model =
             in
                 ( { model | keysBeingTyped = "" }, Cmd.none )
 
-        GroupMsg id msg ->
-          (model, Cmd.none)
-            -- let
-            --     clickedGroup =
-            --         Dict.get id model.groups
-            -- in
-            --     case Dict.get id model.groups of
-            --         Just groupModel ->
-            --             case msg of
-            --                 Group.OpenGroup ->
-            --                     ( { model
-            --                         | songs = makeSongItemDictionary groupModel.songs
-            --                         , groups = Dict.empty
-            --                       }
-            --                     , Cmd.none
-            --                     )
-
-            --                 Group.SelectGroup ->
-            --                     let updatedGroups =
-            --                           if model.isShiftDown then
-            --                            model.groups
-            --                           else
-            --                             Dict.map (\id gm -> Group.reset gm) model.groups
-            --                     in
-            --                       ( { model
-            --                           | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
-            --                         }
-            --                       , Cmd.none
-            --                       )
-
-            --         Nothing ->
-            --             ( model, Cmd.none )
-
+        -- GroupMsg id msg ->
+        --   (model, Cmd.none)
+        -- let
+        --     clickedGroup =
+        --         Dict.get id model.groups
+        -- in
+        --     case Dict.get id model.groups of
+        --         Just groupModel ->
+        --             case msg of
+        --                 Group.OpenGroup ->
+        --                     ( { model
+        --                         | songs = Helpers.makeSongItemDictionary groupModel.songs
+        --                         , groups = Dict.empty
+        --                       }
+        --                     , Cmd.none
+        --                     )
+        --                 Group.SelectGroup ->
+        --                     let updatedGroups =
+        --                           if model.isShiftDown then
+        --                            model.groups
+        --                           else
+        --                             Dict.map (\id gm -> Group.reset gm) model.groups
+        --                     in
+        --                       ( { model
+        --                           | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
+        --                         }
+        --                       , Cmd.none
+        --                       )
+        --         Nothing ->
+        --             ( model, Cmd.none )
         -- SongMsg id msg ->
         --     let
-        --         newSongs = model.items
+        --         newSongs = model.browser.items
         --             -- (List.map
         --             --     (\indexed ->
         --             --         if indexed.id == id then
@@ -206,7 +212,6 @@ update action model =
         --         ( { model | items = newSongs }
         --         , Cmd.none
         --         )
-
         NavigationBack ->
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
@@ -214,66 +219,72 @@ update action model =
             ( Audio.update msg model, Cmd.none )
 
         QueueMsg msg ->
-          case (Debug.log "which msg " msg) of
-            Queue.SongMsg queueNumber QueueSong.SetCurrentSong ->
-              ({model | currentSong = queueNumber}, Cmd.none)
-            otherMessages ->
-              ( { model | queue = Queue.update msg model.queue }, Cmd.none )
+            let
+                ( queue', queueCmd ) =
+                    Queue.update msg model.queue
+            in
+            case queueCmd of
+              Just (Queue.UpdateCurrentSong newSong) ->
+                ( { model
+                    | queue = queue'
+                    , currentSong = newSong
+                  }, Cmd.none )
+              anythingElse ->
+                ( { model | queue = queue'}, Cmd.none )
 
         BrowserMsg msg ->
-          let (items', browserCmd) = Browser.update msg model.items in
-          case browserCmd of
-            Just (Browser.OpenGroup item) ->
-              case item.data of
-                Group groupModel ->
-                  let newSongs = makeSongItemDictionary groupModel.songs in
-                  ({model | items = newSongs}, Cmd.none)
-                other ->
-                  ({model | items = items'}, Cmd.none)
-            Just (Browser.AddSong item) ->
-              case item.data of
-                Song songModel ->
-                  -- TODO make queue model use items
-                  let songModelToQueueModel sm =
-                    { model =
-                        { path = sm.path
-                        , title = sm.title
-                        , artist = sm.artist
-                        , album = sm.album
-                        , track = sm.track
-                        , picture = sm.picture
-                        , isDragging = False
-                        , isMouseOver = False
-                        }
-                    , id = 0
-                   }
-                 in
-                    ({model
-                      | items = items'
-                      , queue = { mouseOver = False, mouseOverItem = 0, array = Array.push (songModelToQueueModel songModel) model.queue.array}
-                    }, Cmd.none)
-                other ->
-                  ({model | items = items'}, Cmd.none)
+            let
+                ( browser', browserCmd ) =
+                    Browser.update msg model.isShiftDown model.browser
+            in
+                case (Debug.log "browser cmd " browserCmd) of
+                    Just (Browser.AddSong item) ->
+                        case item.data of
+                            Song songModel ->
+                                ( { model
+                                    | browser = browser'
+                                    , queue = fst <| Queue.update (Queue.Drop [ item ]) model.queue
+                                  }
+                                , Cmd.none
+                                )
 
-            Nothing ->
-              ({model | items = items'}, Cmd.none)
+                            anythingElse ->
+                                ( { model | browser = browser' }, Cmd.none )
 
+                    anythingElse ->
+                        ( { model | browser = browser' }, Cmd.none )
 
         UpdateSongs songs ->
-            ( { model
-                | items = makeSongItemDictionary songs
-                -- , groups = Dict.empty
-              }
-            , Cmd.none
-            )
+            let
+                browser =
+                    Browser.initialModel
+
+                browser' =
+                    { browser | items = Helpers.makeSongItemDictionary songs }
+            in
+                ( { model
+                    | browser =
+                        browser'
+                        -- , groups = Dict.empty
+                  }
+                , Cmd.none
+                )
 
         UpdateGroups groups ->
-            ( { model
-                | items = makeGroupItemDictionary groups
-                -- , songs = Dict.empty
-              }
-            , Cmd.none
-            )
+            let
+                browser =
+                    Browser.initialModel
+
+                browser' =
+                    { browser | items = Helpers.makeGroupItemDictionary groups }
+            in
+                ( { model
+                    | browser =
+                        browser'
+                        -- , songs = Dict.empty
+                  }
+                , Cmd.none
+                )
 
         MouseDowns xy ->
             ( { model
@@ -283,16 +294,37 @@ update action model =
             )
 
         MouseUps xy ->
-          if model.queue.mouseOver then
-            ( { model
-                | queue = Queue.update Queue.Drop model.queue
-                -- | items = makeGroupItemDictionary <| Item.update Item.Reset model.items
-                , isDragging = False
-              }
-            , Cmd.none
-            )
+            if model.queue.mouseOver then
+                let
+                    itemsToDrop =
+                        model.browser.items
+                            |> Dict.values
+                            |> List.filter .isSelected
+                            |> List.foldl
+                                (\item acc ->
+                                    case item.data of
+                                        Group groupModel ->
+                                            let
+                                                newItems =
+                                                    List.map (\song -> { isSelected = False, isMouseOver = False, data = Song song }) groupModel.songs
+                                            in
+                                                newItems ++ acc
+
+                                        anythingElse ->
+                                            item :: acc
+                                )
+                                []
+                in
+                    ( { model
+                        | queue = fst <| Queue.update (Queue.Drop itemsToDrop) model.queue
+                        , browser = Browser.update Browser.Reset False model.browser |> fst
+                            -- Helpers.makeGroupItemDictionary <| Item.update Item.Reset model.items
+                        , isDragging = False
+                      }
+                    , Cmd.none
+                    )
             else
-              (model, Cmd.none)
+                ( model, Cmd.none )
 
         MouseMoves xy ->
             ( { model
@@ -312,35 +344,6 @@ update action model =
 
         DestroyDatabase ->
             ( model, Port.destroyDatabase "bar" )
-
-
-makeSongItemDictionary : List SongModel -> ItemDictionary
-makeSongItemDictionary songs =
-  makeItemDictionary <| List.map Song songs
-
-makeGroupItemDictionary : List GroupModel -> ItemDictionary
-makeGroupItemDictionary groups =
-  makeItemDictionary <| List.map Group groups
-
-makeItemDictionary : List ItemData -> ItemDictionary
-makeItemDictionary itemDatas =
-    let
-        ids =
-            List.map toString <| generateIdList (List.length itemDatas) []
-        pairs =
-            List.map2 (,) ids itemDatas
-    in
-        List.foldl
-          (\( id, itemData) dict -> Dict.insert id {isSelected = False, isMouseOver = False, data = itemData }  dict)
-          Dict.empty
-          pairs
-
-generateIdList : Int -> List Int -> List Int
-generateIdList len list =
-    if len == 0 then
-        list
-    else
-        len :: (generateIdList (len - 1) list)
 
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
@@ -367,26 +370,31 @@ subscriptions model =
 
 
 
--- VIEW
+
 
 
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "main-container" ]
-        [ Html.div [Attr.id "banner"] []
+        [ Html.div [ Attr.id "banner" ] []
         , audioPlayer model
         , navigationView
         , songView model
         , queueView model
-        -- , albumArtView model
+          -- , albumArtView model
         ]
 
 
 audioPlayer : Model -> Html Msg
 audioPlayer model =
     case (Array.get model.currentSong model.queue.array) of
-        Just indexedFileObject ->
-            Html.map AudioMsg (Audio.view indexedFileObject.model.path)
+        Just item ->
+            case item.data of
+                Song song ->
+                    Html.map AudioMsg (Audio.view song.path)
+
+                somthingElse ->
+                    Html.map AudioMsg (Audio.view "this should never happen")
 
         Nothing ->
             Html.div [] []
@@ -394,34 +402,50 @@ audioPlayer model =
 
 songView : Model -> Html Msg
 songView model =
-  let maybeMousePos = if model.isDragging then Just model.currentMousePos else Nothing in
-  Html.map BrowserMsg (Browser.view maybeMousePos model.items)
-    -- Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
-    --     [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) comparable -> v -> Dict comparable v<| Dict.toList model.groups)
-    --     , Html.table []
-    --         ([ Html.thead []
-    --             [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
-    --             ]
-    --          ]
-    --             ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
-    --         )
-    --     ]
+    let
+        maybeMousePos =
+            if model.isDragging then
+                Just model.currentMousePos
+            else
+                Nothing
+    in
+        Html.map BrowserMsg (Browser.view maybeMousePos model.browser)
+
+
+
+-- Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
+--     [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) comparable -> v -> Dict comparable v<| Dict.toList model.groups)
+--     , Html.table []
+--         ([ Html.thead []
+--             [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
+--             ]
+--          ]
+--             ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
+--         )
+--     ]
 
 
 queueView : Model -> Html Msg
 queueView model =
-    Html.map QueueMsg (Queue.view model)
+    let
+        maybeMousePos =
+            if model.isDragging then
+                Just model.currentMousePos
+            else
+                Nothing
+    in
+        Html.map QueueMsg (Queue.view maybeMousePos model.currentSong model.queue.array)
 
 
-albumArtView : Model -> Html Msg
-albumArtView model =
-    case (Array.get model.currentSong model.queue.array) of
-        Just indexedSong ->
-            Html.div [ Attr.id "album-art-container" ]
-                [ Html.img [ Attr.src indexedSong.model.picture ] [] ]
 
-        Nothing ->
-            Html.div [] [ Html.text "nothing" ]
+-- albumArtView : Model -> Html Msg
+-- albumArtView model =
+--     case (Array.get model.currentSong model.queue.array) of
+--         Just indexedSong ->
+--             Html.div [ Attr.id "album-art-container" ]
+--                 [ Html.img [ Attr.src indexedSong.model.picture ] [] ]
+--         Nothing ->
+--             Html.div [] [ Html.text "nothing" ]
 
 
 navigationView : Html Msg
@@ -436,11 +460,10 @@ navigationView =
         ]
 
 
+
 -- viewFileObject : { x : Int, y : Int } -> IndexedSongModel -> Html Msg
 -- viewFileObject dragPos { id, model } =
 --     Html.map (SongMsg id) (Song.view model dragPos)
-
-
-viewGroupModel : ( String, GroupModel ) -> Html Msg
-viewGroupModel ( id, model ) =
-    Html.map (GroupMsg id) (Group.view model id)
+-- viewGroupModel : ( String, GroupModel ) -> Html Msg
+-- viewGroupModel ( id, model ) =
+--     Html.map (GroupMsg id) (Group.view model id)

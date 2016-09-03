@@ -6,7 +6,8 @@ import Dict exposing (Dict)
 
 type alias Model =
     { currentSong : Int
-    , items : ItemDictionary
+    , browser : BrowserModel
+    -- , items : ItemDictionary
     -- , groups : ItemDictionary
     , queue : QueueModel
     , rootPath : String
@@ -28,16 +29,16 @@ type alias SongModel =
     }
 
 
-type alias QueueSongModel =
-    { path : String
-    , title : String
-    , artist : String
-    , album : String
-    , track : Int
-    , picture : String
-    , isDragging : Bool
-    , isMouseOver : Bool
-    }
+-- type alias QueueSongModel =
+--     { path : String
+--     , title : String
+--     , artist : String
+--     , album : String
+--     , track : Int
+--     , picture : String
+--     , isDragging : Bool
+--     , isMouseOver : Bool
+--     }
 
 
 type alias GroupModel =
@@ -54,17 +55,20 @@ type alias QueueModel =
     , mouseOverItem : Int
     }
 
-
-type alias IndexedQueueSongModel =
-    { id : Int
-    , model : QueueSongModel
-    }
+type alias BrowserModel =
+    { items : ItemDictionary }
 
 
-type alias IndexedSongModel =
-    { id : Int
-    , model : SongModel
-    }
+-- type alias IndexedQueueSongModel =
+--     { id : Int
+--     , model : QueueSongModel
+--     }
+
+
+-- type alias IndexedSongModel =
+--     { id : Int
+--     , model : SongModel
+--     }
 
 
 type alias ItemDictionary =

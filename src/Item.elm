@@ -18,6 +18,8 @@ type Msg
 
 type ItemCmd
     = DoubleClicked
+    | MouseEntered
+    | Clicked
 
 
 type alias Pos =
@@ -26,15 +28,15 @@ type alias Pos =
 
 update : Msg -> ItemModel -> ( ItemModel, Maybe ItemCmd )
 update msg model =
-    case Debug.log "Item msg is " msg of
+    case Debug.log "itemmsg " msg of
         MouseEnter ->
-            ( { model | isMouseOver = True }, Nothing )
+            ( { model | isMouseOver = True }, Just MouseEntered )
 
         MouseLeave ->
             ( { model | isMouseOver = False }, Nothing )
 
         ItemClicked ->
-            ( { model | isSelected = not model.isSelected }, Nothing )
+            ( { model | isSelected = not model.isSelected }, Just Clicked )
 
         ItemDoubleClicked ->
             ( model, Just DoubleClicked )
@@ -43,8 +45,8 @@ update msg model =
             ( { model | isSelected = False }, Nothing )
 
 
-view : Maybe Pos -> ItemModel -> Html Msg
-view maybeDragPos model =
+view : Maybe Pos -> Bool -> String -> ItemModel -> Html Msg
+view maybeDragPos isCurrentSong id model =
     if model.isSelected then
         case model.data of
             Song songModel ->
@@ -54,8 +56,8 @@ view maybeDragPos model =
                     , Events.onClick ItemClicked
                     , Events.onDoubleClick ItemDoubleClicked
                       -- , MyStyle.mouseOver model.isMouseOver
-                      -- , Events.onMouseEnter MouseEnter
-                      -- , Events.onMouseLeave MouseLeave
+                    , Events.onMouseEnter MouseEnter
+                    , Events.onMouseLeave MouseLeave
                     ]
                     [ Html.text songModel.title
                     , Html.span [ MyStyle.dragging maybeDragPos ] [ Html.text songModel.title ]
@@ -64,6 +66,7 @@ view maybeDragPos model =
             Group groupModel ->
                 Html.li
                     [ Attr.class "group-item"
+                    , Attr.id <| "group-item-" ++ id
                     , MyStyle.currentSong
                     , Events.onClick ItemClicked
                     , Events.onDoubleClick ItemDoubleClicked
@@ -80,20 +83,22 @@ view maybeDragPos model =
                 Html.li
                     [ Attr.class "song-item"
                       -- , MyStyle.mouseOver model.isMouseOver
+                    , (if isCurrentSong then MyStyle.currentSong else MyStyle.none)
                     , Events.onClick ItemClicked
                     , Events.onDoubleClick ItemDoubleClicked
-                      -- , Events.onMouseEnter MouseEnter
-                      -- , Events.onMouseLeave MouseLeave
+                    , Events.onMouseEnter MouseEnter
+                    , Events.onMouseLeave MouseLeave
                     ]
                     [ Html.text songModel.title ]
 
             Group groupModel ->
                 Html.li
                     [ Attr.class "group-item"
-                      -- , MyStyle.mouseOver model.isMouseOver
+                    , Attr.id <| "group-item-" ++ id
+                    -- , MyStyle.mouseOver model.isMouseOver
                     , Events.onClick ItemClicked
                     , Events.onDoubleClick ItemDoubleClicked
-                      -- , Events.onMouseEnter MouseEnter
-                      -- , Events.onMouseLeave MouseLeave
+                      , Events.onMouseEnter MouseEnter
+                      , Events.onMouseLeave MouseLeave
                     ]
                     [ Html.text groupModel.title ]

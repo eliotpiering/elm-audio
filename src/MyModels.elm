@@ -12,7 +12,7 @@ type alias Model =
     , queue : QueueModel
     , rootPath : String
     , currentMousePos : { x : Int, y : Int }
-    , isDragging : Bool
+    , dragStart : Maybe MouseLocation
     , keysBeingTyped : String
     , isShiftDown : Bool
     }
@@ -25,7 +25,6 @@ type alias SongModel =
     , album : String
     , track : Int
     , picture : String
-    , isDragging : Bool
     }
 
 
@@ -44,8 +43,6 @@ type alias SongModel =
 type alias GroupModel =
     { title : String
     , songs : List SongModel
-    , isSelected : Bool
-    , isDragging : Bool
     }
 
 
@@ -56,7 +53,9 @@ type alias QueueModel =
     }
 
 type alias BrowserModel =
-    { items : ItemDictionary }
+    { isMouseOver : Bool
+    , items : ItemDictionary
+    }
 
 
 -- type alias IndexedQueueSongModel =
@@ -85,3 +84,8 @@ type alias ItemModel =
 type ItemData
     = Song SongModel
     | Group GroupModel
+
+type MouseLocation
+  = BrowserWindow
+  | QueueWindow
+  | OtherWindow

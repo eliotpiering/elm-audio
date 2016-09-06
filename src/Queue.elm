@@ -27,7 +27,8 @@ type Msg
     | MouseLeave
     | ItemMsg Int Item.Msg
       -- | SongMsg Int QueueSong.Msg
-    | Drop (List ItemModel)
+    | Drop (List ItemModel) Int
+    | Reorder Int
 
 
 type alias Pos =
@@ -89,7 +90,7 @@ update msg model =
                             Item.update msg item
 
                         model' =
-                            { model | array = Array.set id item' model.array }
+                            { model | array = Array.set id (Debug.log "new item in queue " item') model.array }
                     in
                         case itemCmd of
                             Just (Item.MouseEntered) ->
@@ -104,7 +105,7 @@ update msg model =
                 Nothing ->
                     ( model, Nothing )
 
-        Drop newItems ->
+        Drop newItems currentQueueIndex ->
             -- if model.mouseOver then
             -- let
             --     newItems =
@@ -122,6 +123,12 @@ update msg model =
 
                 newArrayItems =
                     Array.fromList <| SortSongs.byAlbumAndTrack newItems
+
+                newQueueIndex =
+                    if currentQueueIndex > model.mouseOverItem then
+                      currentQueueIndex + (Array.length newArrayItems)
+                    else
+                      currentQueueIndex
             in
                 ( { model
                     | array =
@@ -129,13 +136,45 @@ update msg model =
                             <| Array.append left
                             <| Array.append newArrayItems right
                   }
-                , Nothing
+                , Just <| UpdateCurrentSong newQueueIndex
                 )
 
+        Reorder currentQueueIndex ->
+            let
+                maybeIndexedItemToReorder =
+                    model.array |> Array.toIndexedList |> List.filter (\(i, item) -> item.isSelected ) |> List.head
+            in
+                case maybeIndexedItemToReorder of
+                    Just ( indexOfItemToReorder, itemToReorder ) ->
+                        let
+                            queueLength =
+                                Array.length model.array
 
+                            itemsToStayTheSame =
+                                model.array |> Array.filter (not << .isSelected)
 
--- else
---   model
+                            left =
+                                Array.slice 0 model.mouseOverItem itemsToStayTheSame
+
+                            right =
+                                Array.slice model.mouseOverItem queueLength itemsToStayTheSame
+
+                            reorderedQueue =
+                                Array.append (Array.push itemToReorder left) right
+
+                            newQueueIndex =
+                                if currentQueueIndex > indexOfItemToReorder && currentQueueIndex < model.mouseOverItem then
+                                    currentQueueIndex - 1
+                                else
+                                  if currentQueueIndex < indexOfItemToReorder && currentQueueIndex > model.mouseOverItem then
+                                    currentQueueIndex + 1
+                                  else
+                                    currentQueueIndex
+                        in
+                            ( { model | array = resetQueue reorderedQueue }, Just <| UpdateCurrentSong newQueueIndex )
+
+                    Nothing ->
+                        ( model, Nothing )
 
 
 resetQueue : Array ItemModel -> Array ItemModel
@@ -198,7 +237,7 @@ resetQueue =
 
 itemToHtml : Maybe Pos -> Int -> ( Int, ItemModel ) -> Html Msg
 itemToHtml maybePos currentSong ( id, item ) =
-    Html.map (ItemMsg id) (Item.view maybePos (id == currentSong) (toString id) item)
+    Html.map (ItemMsg id) (Item.queueItemView maybePos (id == currentSong) (toString id) item)
 
 
 view : Maybe Pos -> Int -> Array ItemModel -> Html Msg

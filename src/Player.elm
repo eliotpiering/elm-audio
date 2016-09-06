@@ -72,7 +72,7 @@ initialModel =
     , browser = Browser.initialModel
     , rootPath = "/home/eliot/Music"
     , currentMousePos = { x = 0, y = 0 }
-    , isDragging = False
+    , dragStart = Nothing
     , keysBeingTyped = ""
     , isShiftDown = False
     }
@@ -223,14 +223,17 @@ update action model =
                 ( queue', queueCmd ) =
                     Queue.update msg model.queue
             in
-            case queueCmd of
-              Just (Queue.UpdateCurrentSong newSong) ->
-                ( { model
-                    | queue = queue'
-                    , currentSong = newSong
-                  }, Cmd.none )
-              anythingElse ->
-                ( { model | queue = queue'}, Cmd.none )
+                case queueCmd of
+                    Just (Queue.UpdateCurrentSong newSong) ->
+                        ( { model
+                            | queue = queue'
+                            , currentSong = newSong
+                          }
+                        , Cmd.none
+                        )
+
+                    anythingElse ->
+                        ( { model | queue = queue' }, Cmd.none )
 
         BrowserMsg msg ->
             let
@@ -243,7 +246,7 @@ update action model =
                             Song songModel ->
                                 ( { model
                                     | browser = browser'
-                                    , queue = fst <| Queue.update (Queue.Drop [ item ]) model.queue
+                                    , queue = fst <| Queue.update (Queue.Drop [ item ] model.currentSong) model.queue
                                   }
                                 , Cmd.none
                                 )
@@ -288,43 +291,91 @@ update action model =
 
         MouseDowns xy ->
             ( { model
-                | isDragging = True
+                | dragStart =
+                    Just <| currentMouseLocation model
               }
             , Cmd.none
             )
 
         MouseUps xy ->
-            if model.queue.mouseOver then
-                let
-                    itemsToDrop =
-                        model.browser.items
-                            |> Dict.values
-                            |> List.filter .isSelected
-                            |> List.foldl
-                                (\item acc ->
-                                    case item.data of
-                                        Group groupModel ->
-                                            let
-                                                newItems =
-                                                    List.map (\song -> { isSelected = False, isMouseOver = False, data = Song song }) groupModel.songs
-                                            in
-                                                newItems ++ acc
+            let
+                maybeDragStart =
+                    model.dragStart
+
+                dragEnd =
+                    currentMouseLocation model
+
+                model' =
+                    { model | dragStart = Nothing }
+            in
+                case maybeDragStart of
+                    Just BrowserWindow ->
+                        case dragEnd of
+                            QueueWindow ->
+                                -- Droping browser items
+                                let
+                                    itemsToDrop =
+                                        model.browser.items
+                                            |> Dict.values
+                                            |> List.filter .isSelected
+                                            |> List.foldl
+                                                (\item acc ->
+                                                    case item.data of
+                                                        Group groupModel ->
+                                                            let
+                                                                newItems =
+                                                                    List.map (\song -> { isSelected = False, isMouseOver = False, data = Song song }) groupModel.songs
+                                                            in
+                                                                newItems ++ acc
+
+                                                        anythingElse ->
+                                                            item :: acc
+                                                )
+                                                []
+
+                                    ( queue', queueCmd ) =
+                                        Queue.update (Queue.Drop itemsToDrop model.currentSong) model.queue
+                                in
+                                    case queueCmd of
+                                        Just (Queue.UpdateCurrentSong newSong) ->
+                                            ( { model'
+                                                | queue = queue'
+                                                , browser = Browser.update Browser.Reset False model.browser |> fst
+                                                , currentSong = newSong
+                                              }
+                                            , Cmd.none
+                                            )
 
                                         anythingElse ->
-                                            item :: acc
-                                )
-                                []
-                in
-                    ( { model
-                        | queue = fst <| Queue.update (Queue.Drop itemsToDrop) model.queue
-                        , browser = Browser.update Browser.Reset False model.browser |> fst
-                            -- Helpers.makeGroupItemDictionary <| Item.update Item.Reset model.items
-                        , isDragging = False
-                      }
-                    , Cmd.none
-                    )
-            else
-                ( model, Cmd.none )
+                                            ( model', Cmd.none )
+
+                            anythingElse ->
+                                ( model', Cmd.none )
+
+                    Just QueueWindow ->
+                        case dragEnd of
+                            QueueWindow ->
+                                let
+                                    ( queue', queueCmd ) =
+                                        Queue.update (Queue.Reorder model.currentSong) model.queue
+                                in
+                                    case queueCmd of
+                                        Just (Queue.UpdateCurrentSong newSong) ->
+                                            ( { model'
+                                                | queue = queue'
+                                                , currentSong = newSong
+                                              }
+                                            , Cmd.none
+                                            )
+
+                                        anythingElse ->
+                                            ( model, Cmd.none )
+
+                            anythingElse ->
+                                ( model, Cmd.none )
+
+                    anythingElse ->
+                        ( model', Cmd.none )
 
         MouseMoves xy ->
             ( { model
@@ -351,6 +402,16 @@ urlUpdate newPath model =
     ( { model | rootPath = newPath }, (Port.groupBy newPath) )
 
 
+currentMouseLocation : Model -> MouseLocation
+currentMouseLocation model =
+    if model.browser.isMouseOver then
+        BrowserWindow
+    else if model.queue.mouseOver then
+        QueueWindow
+    else
+        OtherWindow
+
+
 
 -- SUBSCRIPTIONS
 
@@ -369,17 +430,13 @@ subscriptions model =
         ]
 
 
-
-
-
-
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "main-container" ]
         [ Html.div [ Attr.id "banner" ] []
         , audioPlayer model
         , navigationView
-        , songView model
+        , browserView model
         , queueView model
           -- , albumArtView model
         ]
@@ -400,14 +457,16 @@ audioPlayer model =
             Html.div [] []
 
 
-songView : Model -> Html Msg
-songView model =
+browserView : Model -> Html Msg
+browserView model =
     let
         maybeMousePos =
-            if model.isDragging then
-                Just model.currentMousePos
-            else
-                Nothing
+            case model.dragStart of
+                Just BrowserWindow ->
+                    Just model.currentMousePos
+
+                anythingElse ->
+                    Nothing
     in
         Html.map BrowserMsg (Browser.view maybeMousePos model.browser)
 
@@ -429,10 +488,12 @@ queueView : Model -> Html Msg
 queueView model =
     let
         maybeMousePos =
-            if model.isDragging then
-                Just model.currentMousePos
-            else
-                Nothing
+            case model.dragStart of
+                Just QueueWindow ->
+                    Just model.currentMousePos
+
+                anythingElse ->
+                    Nothing
     in
         Html.map QueueMsg (Queue.view maybeMousePos model.currentSong model.queue.array)
 

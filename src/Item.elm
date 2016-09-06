@@ -45,60 +45,55 @@ update msg model =
             ( { model | isSelected = False }, Nothing )
 
 
-view : Maybe Pos -> Bool -> String -> ItemModel -> Html Msg
-view maybeDragPos isCurrentSong id model =
-    if model.isSelected then
-        case model.data of
-            Song songModel ->
-                Html.li
-                    [ Attr.class "song-item"
-                    , MyStyle.currentSong
-                    , Events.onClick ItemClicked
-                    , Events.onDoubleClick ItemDoubleClicked
-                      -- , MyStyle.mouseOver model.isMouseOver
-                    , Events.onMouseEnter MouseEnter
-                    , Events.onMouseLeave MouseLeave
-                    ]
-                    [ Html.text songModel.title
-                    , Html.span [ MyStyle.dragging maybeDragPos ] [ Html.text songModel.title ]
-                    ]
+browserItemView : Maybe Pos -> String -> ItemModel -> Html Msg
+browserItemView maybeDragPos id model =
+    case model.data of
+        Song songModel ->
+            Html.li
+                [ Attr.class "song-item"
+                , Events.onMouseDown ItemClicked
+                , Events.onDoubleClick ItemDoubleClicked
+                , Events.onMouseEnter MouseEnter
+                , Events.onMouseLeave MouseLeave
+                , MyStyle.isSelected model.isSelected
+                ]
+                [ Html.text songModel.title
+                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text songModel.title ]
+                ]
 
-            Group groupModel ->
-                Html.li
-                    [ Attr.class "group-item"
-                    , Attr.id <| "group-item-" ++ id
-                    , MyStyle.currentSong
-                    , Events.onClick ItemClicked
-                    , Events.onDoubleClick ItemDoubleClicked
-                      -- , Events.onMouseEnter MouseEnter
-                      -- , Events.onMouseLeave MouseLeave
-                      -- , MyStyle.mouseOver model.isMouseOver
-                    ]
-                    [ Html.text groupModel.title
-                    , Html.span [ MyStyle.dragging maybeDragPos ] [ Html.text groupModel.title ]
-                    ]
-    else
-        case model.data of
-            Song songModel ->
-                Html.li
-                    [ Attr.class "song-item"
-                      -- , MyStyle.mouseOver model.isMouseOver
-                    , (if isCurrentSong then MyStyle.currentSong else MyStyle.none)
-                    , Events.onClick ItemClicked
-                    , Events.onDoubleClick ItemDoubleClicked
-                    , Events.onMouseEnter MouseEnter
-                    , Events.onMouseLeave MouseLeave
-                    ]
-                    [ Html.text songModel.title ]
+        Group groupModel ->
+            Html.li
+                [ Attr.class "group-item"
+                , Attr.id <| "group-item-" ++ id
+                , Events.onMouseDown ItemClicked
+                , Events.onDoubleClick ItemDoubleClicked
+                , MyStyle.isSelected model.isSelected
+                  -- , Events.onMouseEnter MouseEnter
+                  -- , Events.onMouseLeave MouseLeave
+                  -- , MyStyle.mouseOver model.isMouseOver
+                ]
+                [ Html.text groupModel.title
+                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text groupModel.title ]
+                ]
 
-            Group groupModel ->
-                Html.li
-                    [ Attr.class "group-item"
-                    , Attr.id <| "group-item-" ++ id
-                    -- , MyStyle.mouseOver model.isMouseOver
-                    , Events.onClick ItemClicked
-                    , Events.onDoubleClick ItemDoubleClicked
-                      , Events.onMouseEnter MouseEnter
-                      , Events.onMouseLeave MouseLeave
-                    ]
-                    [ Html.text groupModel.title ]
+
+queueItemView : Maybe Pos -> Bool -> String -> ItemModel -> Html Msg
+queueItemView maybeDragPos isCurrentSong id model =
+    case model.data of
+        Song songModel ->
+            Html.li
+                [ Attr.class "song-item"
+                , MyStyle.mouseOver model.isMouseOver
+                , MyStyle.currentSong isCurrentSong
+                , Events.onMouseDown ItemClicked
+                , Events.onDoubleClick ItemDoubleClicked
+                , Events.onMouseEnter MouseEnter
+                , Events.onMouseLeave MouseLeave
+                ]
+                [ Html.text songModel.title
+                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text songModel.title ]
+                ]
+
+        Group groupModel ->
+            Html.li []
+                [ Html.text "This should never happen" ]

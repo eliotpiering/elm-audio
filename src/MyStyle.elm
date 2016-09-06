@@ -19,26 +19,30 @@ queueViewContainer canDrop =
         style []
 
 
-dragging maybeDragPos =
-  case maybeDragPos of
-    Just {x, y} ->
-        let
-            xPos =
-                toString x ++ "px"
+dragging maybeDragPos isSelected =
+    case maybeDragPos of
+        Just { x, y } ->
+            if isSelected then
+                let
+                    xPos =
+                        toString x ++ "px"
 
-            yPos =
-                toString y ++ "px"
-        in
-            style
-                [ ( "position", "fixed" )
-                , ( "left", xPos )
-                , ( "top", yPos )
-                , ( "z-index", "-1" )
-                , ( "color", "white" )
-                , ( "background-color", "black" )
-                ]
-    Nothing ->
-        style []
+                    yPos =
+                        toString y ++ "px"
+                in
+                    style
+                        [ ( "position", "fixed" )
+                        , ( "left", xPos )
+                        , ( "top", yPos )
+                        , ( "z-index", "-1" )
+                        , ( "color", "white" )
+                        , ( "background-color", "black" )
+                        ]
+            else
+                style [ ( "display", "none" ) ]
+
+        Nothing ->
+            style [ ( "display", "none" ) ]
 
 
 mouseOver isMouseOver =
@@ -50,8 +54,11 @@ mouseOver isMouseOver =
         style []
 
 
-currentSong =
-    style [ ( "color", "white" ), ( "background-color", "black" ) ]
+currentSong isCurrentSong =
+    if isCurrentSong then
+        style [ ( "color", "white" ), ( "background-color", "black" ) ]
+    else
+        style []
 
 
 isSelected isSelected =

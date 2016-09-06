@@ -15,12 +15,13 @@ import SortSongs
 type Msg
     = ItemMsg String Item.Msg
     | Reset
+    | MouseEnter
+    | MouseLeave
 
 
 type BrowserCmd
     = OpenGroup ItemModel
     | AddSong ItemModel
-
 
 type alias Pos =
     { x : Int, y : Int }
@@ -28,7 +29,7 @@ type alias Pos =
 
 initialModel : BrowserModel
 initialModel =
-    { items = Dict.empty }
+    { isMouseOver = False, items = Dict.empty }
 
 
 update : Msg -> Bool -> BrowserModel -> ( BrowserModel, Maybe BrowserCmd )
@@ -58,13 +59,17 @@ update msg isShiftDown model =
                                         ( model', Just <| AddSong item' )
 
                             Just (Item.Clicked) ->
-                              if isShiftDown then 
-                                (model', Nothing)
-                              else
-                                let cleanItems = resetItems model.items
-                                    itemsWithOneSelected = Dict.insert id item' cleanItems in
-                                ({model | items = itemsWithOneSelected }, Nothing)
+                                if isShiftDown then
+                                    ( model', Nothing )
+                                else
+                                    let
+                                        cleanItems =
+                                            resetItems model.items
 
+                                        itemsWithOneSelected =
+                                            Dict.insert id item' cleanItems
+                                    in
+                                        ( { model | items = itemsWithOneSelected }, Nothing )
 
                             anythingElse ->
                                 ( model', Nothing )
@@ -73,18 +78,35 @@ update msg isShiftDown model =
                     ( model, Nothing )
 
         Reset ->
-            ( { model | items =  resetItems model.items }, Nothing )
+            ( { model | items = resetItems model.items }, Nothing )
+
+        MouseEnter ->
+            ( { model | isMouseOver = True }, Nothing )
+
+        MouseLeave ->
+            ( { model | isMouseOver = False }, Nothing )
+
+
 
 resetItems : ItemDictionary -> ItemDictionary
-resetItems = Dict.map (\id item -> Item.update Item.Reset item |> fst)
+resetItems =
+    Dict.map (\id item -> Item.update Item.Reset item |> fst)
 
 
 view : Maybe Pos -> BrowserModel -> Html Msg
 view maybePos model =
-    Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
-        [ Html.ul [] (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items) ]
+    Html.div
+        [ Attr.id "file-view-container"
+        , Attr.class "scroll-box"
+        , Events.onMouseEnter MouseEnter
+        , Events.onMouseLeave MouseLeave
+        ]
+        [
+         Html.ul []
+           (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items)
+        ]
 
 
 itemToHtml : Maybe Pos -> ( String, ItemModel ) -> Html Msg
 itemToHtml maybePos ( id, item ) =
-    Html.map (ItemMsg id) (Item.view maybePos False id item)
+    Html.map (ItemMsg id) (Item.browserItemView maybePos id item)

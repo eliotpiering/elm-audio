@@ -23,6 +23,7 @@ type BrowserCmd
     = OpenGroup ItemModel
     | AddSong ItemModel
 
+
 type alias Pos =
     { x : Int, y : Int }
 
@@ -87,7 +88,6 @@ update msg isShiftDown model =
             ( { model | isMouseOver = False }, Nothing )
 
 
-
 resetItems : ItemDictionary -> ItemDictionary
 resetItems =
     Dict.map (\id item -> Item.update Item.Reset item |> fst)
@@ -101,9 +101,8 @@ view maybePos model =
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave
         ]
-        [
-         Html.ul []
-           (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items)
+        [ Html.ul []
+            (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items)
         ]
 
 

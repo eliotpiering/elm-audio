@@ -72,7 +72,6 @@ type Msg
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "audio-view-container" ]
-        -- [ previousSongButton
         [ (Html.div [ ]
             [ Html.audio
                 [ Attr.id "audio-player-container"
@@ -85,17 +84,4 @@ view model =
                 []
             ]
           )
-        -- , nextSongButton
         ]
-
-
-nextSongButton : Html Msg
-nextSongButton =
-    Html.div [ Attr.class "button-container" ]
-        [ Html.div [ Attr.class "button", Events.onClick <| NextSong ] [ Html.text "NEXT -->" ] ]
-
-
-previousSongButton : Html Msg
-previousSongButton =
-    Html.div [ Attr.class "button-container" ]
-        [ Html.div [ Attr.class "button", Events.onClick <| PreviousSong ] [ Html.text "<-- PREVIOUS" ] ]

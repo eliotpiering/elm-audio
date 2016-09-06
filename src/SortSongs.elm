@@ -18,7 +18,7 @@ byAlbumAndTrack =
 
                                 greaterOrLess ->
                                     greaterOrLess
-           
+
                         anythingElse ->
                             EQ
 
@@ -42,16 +42,3 @@ byGroupTitle =
                 anythingElse ->
                     EQ
         )
-
-
-
--- byIndexedAlbumAndTrack : List IndexedSongModel -> List IndexedSongModel
--- byIndexedAlbumAndTrack =
---     List.sortWith
---         (\s1 s2 ->
---             case compare s1.model.album s2.model.album of
---                 EQ ->
---                     compare s1.model.track s2.model.track
---                 greaterOrLess ->
---                     greaterOrLess
---         )

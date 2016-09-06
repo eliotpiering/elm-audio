@@ -19,16 +19,7 @@ import Focus
 import MyModels exposing (..)
 import Window as Win
 import Audio
-
-
--- import Song
--- import Group
-
 import Queue
-
-
--- import QueueSong
-
 import SortSongs
 import Browser
 import Helpers
@@ -82,10 +73,7 @@ initialModel =
 -- UPDATE
 
 
-type
-    Msg
-    -- = SongMsg Int Song.Msg
-    -- = GroupMsg String Group.Msg
+type Msg
     = NavigationBack
     | AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
@@ -162,56 +150,6 @@ update action model =
             in
                 ( { model | keysBeingTyped = "" }, Cmd.none )
 
-        -- GroupMsg id msg ->
-        --   (model, Cmd.none)
-        -- let
-        --     clickedGroup =
-        --         Dict.get id model.groups
-        -- in
-        --     case Dict.get id model.groups of
-        --         Just groupModel ->
-        --             case msg of
-        --                 Group.OpenGroup ->
-        --                     ( { model
-        --                         | songs = Helpers.makeSongItemDictionary groupModel.songs
-        --                         , groups = Dict.empty
-        --                       }
-        --                     , Cmd.none
-        --                     )
-        --                 Group.SelectGroup ->
-        --                     let updatedGroups =
-        --                           if model.isShiftDown then
-        --                            model.groups
-        --                           else
-        --                             Dict.map (\id gm -> Group.reset gm) model.groups
-        --                     in
-        --                       ( { model
-        --                           | groups = Dict.insert id (Group.update msg groupModel) updatedGroups
-        --                         }
-        --                       , Cmd.none
-        --                       )
-        --         Nothing ->
-        --             ( model, Cmd.none )
-        -- SongMsg id msg ->
-        --     let
-        --         newSongs = model.browser.items
-        --             -- (List.map
-        --             --     (\indexed ->
-        --             --         if indexed.id == id then
-        --             --             { indexed
-        --             --                 | model =
-        --             --                     fst
-        --             --                         <| Song.update msg indexed.model
-        --             --             }
-        --             --         else
-        --             --             indexed
-        --             --     )
-        --             --     model.songs
-        --             -- )
-        --     in
-        --         ( { model | items = newSongs }
-        --         , Cmd.none
-        --         )
         NavigationBack ->
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
@@ -268,7 +206,6 @@ update action model =
                 ( { model
                     | browser =
                         browser'
-                        -- , groups = Dict.empty
                   }
                 , Cmd.none
                 )
@@ -284,7 +221,6 @@ update action model =
                 ( { model
                     | browser =
                         browser'
-                        -- , songs = Dict.empty
                   }
                 , Cmd.none
                 )
@@ -471,19 +407,6 @@ browserView model =
         Html.map BrowserMsg (Browser.view maybeMousePos model.browser)
 
 
-
--- Html.div [ Attr.id "file-view-container", Attr.class "scroll-box" ]
---     [ Html.ul [] (List.map viewGroupModel <| List.sortBy (snd >> .title) comparable -> v -> Dict comparable v<| Dict.toList model.groups)
---     , Html.table []
---         ([ Html.thead []
---             [ Html.tr [] [ Html.td [] [ Html.text "Title" ], Html.td [] [ Html.text "Artist" ], Html.td [] [ Html.text "Album" ] ]
---             ]
---          ]
---             ++ (List.map (viewFileObject model.currentMousePos) <| SortSongs.byIndexedAlbumAndTrack model.songs)
---         )
---     ]
-
-
 queueView : Model -> Html Msg
 queueView model =
     let
@@ -519,12 +442,3 @@ navigationView =
         , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
         , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]
         ]
-
-
-
--- viewFileObject : { x : Int, y : Int } -> IndexedSongModel -> Html Msg
--- viewFileObject dragPos { id, model } =
---     Html.map (SongMsg id) (Song.view model dragPos)
--- viewGroupModel : ( String, GroupModel ) -> Html Msg
--- viewGroupModel ( id, model ) =
---     Html.map (GroupMsg id) (Group.view model id)

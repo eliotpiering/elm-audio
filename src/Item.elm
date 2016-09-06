@@ -68,9 +68,6 @@ browserItemView maybeDragPos id model =
                 , Events.onMouseDown ItemClicked
                 , Events.onDoubleClick ItemDoubleClicked
                 , MyStyle.isSelected model.isSelected
-                  -- , Events.onMouseEnter MouseEnter
-                  -- , Events.onMouseLeave MouseLeave
-                  -- , MyStyle.mouseOver model.isMouseOver
                 ]
                 [ Html.text groupModel.title
                 , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text groupModel.title ]

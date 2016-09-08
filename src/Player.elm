@@ -193,7 +193,7 @@ update action model =
                                 ( { model | browser = browser' }, Cmd.none )
 
                     anythingElse ->
-                        ( { model | browser = browser' }, Cmd.none )
+                        ( { model | browser = Debug.log "browsermsg in player " browser' }, Cmd.none )
 
         UpdateSongs songs ->
             let
@@ -289,8 +289,9 @@ update action model =
                                 ( model', Cmd.none )
 
                     Just QueueWindow ->
-                        case dragEnd of
+                        case Debug.log "drag end" dragEnd of
                             QueueWindow ->
+                                -- Reordering songs in the queue
                                 let
                                     ( queue', queueCmd ) =
                                         Queue.update (Queue.Reorder model.currentSong) model.queue
@@ -308,7 +309,22 @@ update action model =
                                             ( model, Cmd.none )
 
                             anythingElse ->
-                                ( model, Cmd.none )
+                                -- Removing songs from the queue
+                                let
+                                    ( queue', queueCmd ) =
+                                        Debug.log "updated queue" <| Queue.update (Queue.Remove model.currentSong) model.queue
+                                in
+                                    case queueCmd of
+                                        Just (Queue.UpdateCurrentSong newSong) ->
+                                            ( { model'
+                                                | queue = queue'
+                                                , currentSong = newSong
+                                              }
+                                            , Cmd.none
+                                            )
+
+                                        anythingElse ->
+                                            ( model, Cmd.none )
 
                     anythingElse ->
                         ( model', Cmd.none )
@@ -342,7 +358,7 @@ currentMouseLocation : Model -> MouseLocation
 currentMouseLocation model =
     if model.browser.isMouseOver then
         BrowserWindow
-    else if model.queue.mouseOver then
+    else if Debug.log "is queue mouse over " <| model.queue.mouseOver then
         QueueWindow
     else
         OtherWindow
@@ -418,7 +434,7 @@ queueView model =
                 anythingElse ->
                     Nothing
     in
-        Html.map QueueMsg (Queue.view maybeMousePos model.currentSong model.queue.array)
+        Html.map QueueMsg (Queue.view maybeMousePos model.currentSong model.queue)
 
 
 

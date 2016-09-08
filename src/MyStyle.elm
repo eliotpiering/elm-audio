@@ -37,6 +37,7 @@ dragging maybeDragPos isSelected =
                         , ( "z-index", "-1" )
                         , ( "color", "white" )
                         , ( "background-color", "black" )
+                        , ( "pointer-events", "none") -- make sure not to trigger mouseenters on the dragged element
                         ]
             else
                 style [ ( "display", "none" ) ]
@@ -48,7 +49,7 @@ dragging maybeDragPos isSelected =
 mouseOver isMouseOver =
     if isMouseOver then
         style
-            [ ( "border-bottom", "1px solid black" )
+            [ ( "border", "1px solid black" )
             ]
     else
         style []
@@ -56,7 +57,7 @@ mouseOver isMouseOver =
 
 currentSong isCurrentSong =
     if isCurrentSong then
-        style [ ( "color", "white" ), ( "background-color", "black" ) ]
+        style [ ( "color", "white" ), ( "background-color", "blue" ) ]
     else
         style []
 

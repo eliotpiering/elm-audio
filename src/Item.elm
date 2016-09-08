@@ -28,7 +28,7 @@ type alias Pos =
 
 update : Msg -> ItemModel -> ( ItemModel, Maybe ItemCmd )
 update msg model =
-    case Debug.log "itemmsg " msg of
+    case msg of
         MouseEnter ->
             ( { model | isMouseOver = True }, Just MouseEntered )
 
@@ -53,8 +53,8 @@ browserItemView maybeDragPos id model =
                 [ Attr.class "song-item"
                 , Events.onMouseDown ItemClicked
                 , Events.onDoubleClick ItemDoubleClicked
-                , Events.onMouseEnter MouseEnter
-                , Events.onMouseLeave MouseLeave
+                -- , Events.onMouseEnter MouseEnter
+                -- , Events.onMouseLeave MouseLeave
                 , MyStyle.isSelected model.isSelected
                 ]
                 [ Html.text songModel.title
@@ -82,6 +82,7 @@ queueItemView maybeDragPos isCurrentSong id model =
                 [ Attr.class "song-item"
                 , MyStyle.mouseOver model.isMouseOver
                 , MyStyle.currentSong isCurrentSong
+                , MyStyle.isSelected model.isSelected
                 , Events.onMouseDown ItemClicked
                 , Events.onDoubleClick ItemDoubleClicked
                 , Events.onMouseEnter MouseEnter

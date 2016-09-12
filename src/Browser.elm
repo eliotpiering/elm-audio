@@ -100,6 +100,7 @@ view maybePos model =
         , Attr.class "scroll-box"
         , Events.onMouseEnter MouseEnter
         , Events.onMouseLeave MouseLeave
+        , MyStyle.mouseOver model.isMouseOver
         ]
         [ Html.ul []
             (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items)

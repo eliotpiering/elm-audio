@@ -49,49 +49,39 @@ browserItemView : Maybe Pos -> String -> ItemModel -> Html Msg
 browserItemView maybeDragPos id model =
     case model.data of
         Song songModel ->
-            Html.li
-                [ Attr.class "song-item"
-                , Events.onMouseDown ItemClicked
-                , Events.onDoubleClick ItemDoubleClicked
-                -- , Events.onMouseEnter MouseEnter
-                -- , Events.onMouseLeave MouseLeave
-                , MyStyle.isSelected model.isSelected
-                ]
-                [ Html.text songModel.title
-                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text songModel.title ]
-                ]
+            Html.li (List.append [ Attr.class "song-item" ] <| commonAttrubutes model)
+                <| commonHtml model maybeDragPos songModel
 
         Group groupModel ->
-            Html.li
-                [ Attr.class "group-item"
-                , Attr.id <| "group-item-" ++ id
-                , Events.onMouseDown ItemClicked
-                , Events.onDoubleClick ItemDoubleClicked
-                , MyStyle.isSelected model.isSelected
-                ]
-                [ Html.text groupModel.title
-                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text groupModel.title ]
-                ]
+            Html.li (List.append [ Attr.class "group-item", Attr.id <| "group-item-" ++ id ] <| commonAttrubutes model)
+                <| commonHtml model maybeDragPos groupModel
 
 
 queueItemView : Maybe Pos -> Bool -> String -> ItemModel -> Html Msg
 queueItemView maybeDragPos isCurrentSong id model =
     case model.data of
         Song songModel ->
-            Html.li
-                [ Attr.class "song-item"
-                , MyStyle.mouseOver model.isMouseOver
-                , MyStyle.currentSong isCurrentSong
-                , MyStyle.isSelected model.isSelected
-                , Events.onMouseDown ItemClicked
-                , Events.onDoubleClick ItemDoubleClicked
-                , Events.onMouseEnter MouseEnter
-                , Events.onMouseLeave MouseLeave
-                ]
-                [ Html.text songModel.title
-                , Html.span [ MyStyle.dragging maybeDragPos model.isSelected] [ Html.text songModel.title ]
-                ]
+            Html.li (List.append [ Attr.class "song-item", MyStyle.currentSong isCurrentSong ] <| commonAttrubutes model)
+                <| commonHtml model maybeDragPos songModel
 
         Group groupModel ->
             Html.li []
                 [ Html.text "This should never happen" ]
+
+
+commonAttrubutes : ItemModel -> List (Html.Attribute Msg)
+commonAttrubutes model =
+    [ Events.onMouseDown ItemClicked
+    , Events.onDoubleClick ItemDoubleClicked
+    , Events.onMouseEnter MouseEnter
+    , Events.onMouseLeave MouseLeave
+    , MyStyle.isSelected model.isSelected
+    , MyStyle.mouseOver model.isMouseOver
+    ]
+
+
+commonHtml : ItemModel -> Maybe Pos -> { a | title : String } -> List (Html Msg)
+commonHtml model maybeDragPos data =
+    [ Html.text data.title
+    , Html.span [ MyStyle.dragging maybeDragPos model.isSelected ] [ Html.text data.title ]
+    ]

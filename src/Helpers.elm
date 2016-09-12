@@ -1,6 +1,8 @@
-module Helpers exposing (makeSongItemDictionary, makeGroupItemDictionary, getItemTitle)
+module Helpers exposing (makeSongItemDictionary, makeGroupItemDictionary, getItemTitle, lookupAlbumArt)
 import Dict exposing (Dict)
+import Array exposing (Array)
 import MyModels exposing (..)
+import Port
 
 -- Public
 
@@ -19,6 +21,21 @@ getItemTitle item =
       songModel.title
     Group groupModel ->
       groupModel.title
+
+
+lookupAlbumArt : Int -> Array ItemModel -> Cmd js
+lookupAlbumArt currentSong queueList =
+  case (Array.get currentSong queueList) of
+      Just item ->
+          case item.data of
+              Song songModel ->
+                  Port.lookupAlbumArt songModel.album
+
+              anythingElse ->
+                  Cmd.none
+      Nothing ->
+          Cmd.none
+
 
 -- Private
 

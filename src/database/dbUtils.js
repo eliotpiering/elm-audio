@@ -34,6 +34,9 @@ module.exports = {
       }, []);
     });
   },
+  findById: function(id)  {
+    return db.get(id);
+  },
   groupBy: function(key) {
     return db.allDocs({include_docs: true}).then(function(results){
       return results.rows.filter(function(row){

@@ -60,6 +60,14 @@ app.ports.pause.subscribe(function(){
   }
 });
 
+app.ports.lookupAlbumArt.subscribe(function(albumName){
+  dbUtils.findById(albumName + "-album").then(function(doc){
+    app.ports.updateAlbumArt.send(doc.picture);
+  });
+});
+
+
+
 function updateSongs(dbSongs) {
   if (dbSongs.length > 0) {
     var normalizedSongs = dbSongs.map(normalizeSongs);
@@ -76,6 +84,7 @@ function normalizeSongs(song) {
   } else {
     song.track = 0;
   }
+  song.id = song['_id'];
   song.isDragging = false;
   return song;
 }

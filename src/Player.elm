@@ -20,6 +20,7 @@ import MyModels exposing (..)
 import Window as Win
 import Audio
 import Queue
+import AlbumArt
 import SortSongs
 import Browser
 import Helpers
@@ -53,7 +54,7 @@ urlParser =
 
 init : String -> ( Model, Cmd Msg )
 init s =
-    ( initialModel, Navigation.newUrl <| toUrl initialModel.rootPath )
+    ( initialModel, Navigation.newUrl <| toUrl "nothing") -- initialModel.rootPath )
 
 
 initialModel : Model
@@ -61,7 +62,7 @@ initialModel =
     { currentSong = 0
     , queue = { array = Array.empty, mouseOver = False, mouseOverItem = 1 }
     , browser = Browser.initialModel
-    , rootPath = "/home/eliot/Music"
+    , albumArt = "nothing"
     , currentMousePos = { x = 0, y = 0 }
     , dragStart = Nothing
     , keysBeingTyped = ""
@@ -86,6 +87,7 @@ type Msg
     | MouseUps { x : Int, y : Int }
     | MouseMoves { x : Int, y : Int }
     | GroupBy String
+    | UpdateAlbumArt String
     | TextSearch String
     | DestroyDatabase
     | CreateDatabase
@@ -118,10 +120,10 @@ update action model =
             in
                 case keyCode of
                     37 ->
-                        ( Audio.previousSong model, Cmd.none )
+                        ( Audio.previousSong model)
 
                     39 ->
-                        ( Audio.nextSong model, Cmd.none )
+                        ( Audio.nextSong model)
 
                     32 ->
                         if (String.length model.keysBeingTyped > 0) then
@@ -150,7 +152,7 @@ update action model =
             ( model, Navigation.back <| Debug.log "nav back " 1 )
 
         AudioMsg msg ->
-            ( Audio.update msg model, Cmd.none )
+            Audio.update msg model
 
         QueueMsg msg ->
             let
@@ -163,7 +165,7 @@ update action model =
                             | queue = queue'
                             , currentSong = newSong
                           }
-                        , Cmd.none
+                        , Helpers.lookupAlbumArt newSong queue'.array
                         )
 
                     anythingElse ->
@@ -275,7 +277,7 @@ update action model =
                                                 , browser = Browser.update Browser.Reset False model.browser |> fst
                                                 , currentSong = newSong
                                               }
-                                            , Cmd.none
+                                            , Helpers.lookupAlbumArt newSong queue'.array
                                             )
 
                                         anythingElse ->
@@ -298,7 +300,7 @@ update action model =
                                                 | queue = queue'
                                                 , currentSong = newSong
                                               }
-                                            , Cmd.none
+                                            , Helpers.lookupAlbumArt newSong queue'.array
                                             )
 
                                         anythingElse ->
@@ -316,7 +318,7 @@ update action model =
                                                 | queue = queue'
                                                 , currentSong = newSong
                                               }
-                                            , Cmd.none
+                                            , Helpers.lookupAlbumArt newSong queue'.array
                                             )
 
                                         anythingElse ->
@@ -335,6 +337,10 @@ update action model =
         GroupBy key ->
             ( model, Port.groupBy key )
 
+
+        UpdateAlbumArt picture ->
+            ({ model | albumArt = picture }, Cmd.none)
+
         TextSearch value ->
             ( model, Port.textSearch value )
 
@@ -347,7 +353,8 @@ update action model =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-    ( { model | rootPath = newPath }, (Port.groupBy newPath) )
+  (model, Cmd.none)
+    -- ( { model | rootPath = newPath }, (Port.groupBy newPath) )
 
 
 currentMouseLocation : Model -> MouseLocation
@@ -370,6 +377,7 @@ subscriptions model =
         [ Port.updateSongs UpdateSongs
         , Port.updateGroups UpdateGroups
         , Port.resetKeysBeingTyped ResetKeysBeingTyped
+        , Port.updateAlbumArt UpdateAlbumArt
         , Keyboard.ups KeyUp
         , Keyboard.downs KeyDown
         , Mouse.downs MouseDowns
@@ -386,7 +394,7 @@ view model =
         , navigationView
         , browserView model
         , queueView model
-          -- , albumArtView model
+        , AlbumArt.view model.albumArt
         ]
 
 
@@ -431,17 +439,6 @@ queueView model =
                     Nothing
     in
         Html.map QueueMsg (Queue.view maybeMousePos model.currentSong model.queue)
-
-
-
--- albumArtView : Model -> Html Msg
--- albumArtView model =
---     case (Array.get model.currentSong model.queue.array) of
---         Just indexedSong ->
---             Html.div [ Attr.id "album-art-container" ]
---                 [ Html.img [ Attr.src indexedSong.model.picture ] [] ]
---         Nothing ->
---             Html.div [] [ Html.text "nothing" ]
 
 
 navigationView : Html Msg

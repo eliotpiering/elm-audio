@@ -17,3 +17,7 @@ port destroyDatabase : String -> Cmd msg
 
 
 port pause : String -> Cmd msg
+
+
+port lookupAlbumArt : String -> Cmd msg
+port updateAlbumArt : (String -> msg) -> Sub msg

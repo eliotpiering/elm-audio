@@ -8,7 +8,7 @@ type alias Model =
     { currentSong : Int
     , browser : BrowserModel
     , queue : QueueModel
-    , rootPath : String
+    , albumArt : String
     , currentMousePos : { x : Int, y : Int }
     , dragStart : Maybe MouseLocation
     , keysBeingTyped : String
@@ -17,12 +17,13 @@ type alias Model =
 
 
 type alias SongModel =
-    { path : String
+    { id : String
+    , path : String
     , title : String
     , artist : String
     , album : String
     , track : Int
-    , picture : String
+    -- , picture : String
     }
 
 type alias GroupModel =

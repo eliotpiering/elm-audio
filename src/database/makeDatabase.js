@@ -1,21 +1,21 @@
 var fs = require('fs');
 var PouchDB = require('pouchdb');
 var mediatags = require("jsmediatags");
-var BASE_PATH = "/Users/CrystalMartin/Music/iTunes/iTunes\ Media/Music/";
+var BASE_PATH = "/home/eliot/Music/organized_music";
 PouchDB.plugin(require('pouchdb-quick-search'));
 PouchDB.plugin(require('pouchdb-find'));
 var db = new PouchDB('music_database');
 
 
-// window.onerror = function(message, file, lineNumber) {
-//   // need to do this to catch errors in the metatags.read
-//   // hopefully this doesn't catch everything else :(
+ // window.onerror = function(message, file, lineNumber) {
+ //   // need to do this to catch errors in the metatags.read
+ //   // hopefully this doesn't catch everything else :(
 
-//   console.log("global onerror" + message + file + lineNumber);
-//   return true;
-// };
+ //   console.log("global onerror" + message + file + lineNumber);
+ //   return true;
+ // };
 
- 
+
 function lookupSong(path) {
   return new Promise(function(resolve, reject) {
     console.log(path);
@@ -27,7 +27,7 @@ function lookupSong(path) {
         var artist = tag.tags.TPE2 ? tag.tags.TPE2.data : tags.artist ? tags.artist : "unknown artist";
         var album = tags.album ? tags.album : "unknown album";
         var title = tags.title ? tags.title : "unknown title";
-        var picture = 'no picture'; // tags.picture ? tags.picture : "no picture";
+        var picture = tags.picture ? tags.picture : "no picture";
         var track = tags.track ? tags.track.toString() : "0";
         resolve({
           _id: new Date().toISOString(),
@@ -88,7 +88,8 @@ function addAlbumDocument (song) {
     title: (song.album + " - " + song.artist),
     artist: song.artist,
     type: "album",
-    songs: [song]
+    songs: [song],
+    picture : song.picture
   };
   return db.get(albumId).then(function(albumDocument){
     //Updating

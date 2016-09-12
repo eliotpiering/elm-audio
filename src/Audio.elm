@@ -7,6 +7,7 @@ import Json.Decode as JsonD exposing (Decoder, (:=))
 import MyStyle
 import Array
 import MyModels
+import Helpers
 
 
 type alias ParentModel =
@@ -22,7 +23,7 @@ init path =
     path
 
 
-update : Msg -> ParentModel -> ParentModel
+update : Msg -> ParentModel -> (ParentModel, Cmd msg)
 update msg model =
     case msg of
         NextSong ->
@@ -32,36 +33,39 @@ update msg model =
             previousSong model
 
 
-nextSong : ParentModel -> ParentModel
+nextSong : ParentModel -> (ParentModel, Cmd msg)
 nextSong model =
     let
         shouldReset =
             model.currentSong >= (Array.length model.queue.array) - 1
     in
         if shouldReset then
-            { model
+            ({ model
                 | currentSong = 0
-            }
+            }, Helpers.lookupAlbumArt 0 model.queue.array)
         else
-            { model
-                | currentSong = (model.currentSong + 1)
-            }
+          let newCurrentSong = model.currentSong + 1 in
+            ({ model
+                | currentSong = newCurrentSong
+            }, Helpers.lookupAlbumArt newCurrentSong model.queue.array)
 
 
-previousSong : ParentModel -> ParentModel
+previousSong : ParentModel -> (ParentModel, Cmd msg)
 previousSong model =
     let
         shouldReset =
             model.currentSong == 0
     in
         if shouldReset then
-            { model
-                | currentSong = (Array.length model.queue.array - 1)
-            }
+          let newCurrentSong = (Array.length model.queue.array - 1) in
+            ({ model
+                | currentSong = newCurrentSong
+            }, Helpers.lookupAlbumArt newCurrentSong model.queue.array)
         else
-            { model
-                | currentSong = (model.currentSong - 1)
-            }
+          let newCurrentSong = (model.currentSong - 1) in
+            ({ model
+                | currentSong = newCurrentSong
+            }, Helpers.lookupAlbumArt newCurrentSong model.queue.array)
 
 
 type Msg

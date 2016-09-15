@@ -4,9 +4,26 @@
 <head>
   <meta charset="UTF-8">
   <title>Elm Audio</title>
+  <script type="text/javascript" src="./elm.js"></script>
+  <script>window.Elm = require('./elm.js');</script>
 </head>
 
 <body>
+  <script type="text/javascript">
+      var ipc = require('electron').ipcRenderer;
+      var app = Elm.Player.fullscreen();
+    
+      ipc.on('listDirectory', (event, message) => {
+        app.ports.updateDir.send(message);
+      })
+    
+      app.ports.newDir.subscribe(function(basePath) {
+        console.log("new Dire");
+        console.log(basePath.toString());
+        ipc.send('list-new-directory', basePath.toString());
+      });
+  </script>
+
   <script type="text/javascript" src="./src/electron-renderer.js"></script>
   <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
   <link href="./src/style.css" rel="stylesheet" type="text/css">

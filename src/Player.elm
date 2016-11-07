@@ -1,10 +1,12 @@
 module Player exposing (..)
 
 import Html exposing (Html)
+import Http
+import Task exposing (Task)
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.App as Html
-import Json.Decode as JsonD exposing (Decoder, (:=))
+import Json.Decode as Json exposing (Decoder, (:=))
 import Array exposing (Array)
 import Dict exposing (Dict)
 import String
@@ -54,7 +56,11 @@ urlParser =
 
 init : String -> ( Model, Cmd Msg )
 init s =
-    ( initialModel, Navigation.newUrl <| toUrl "nothing") -- initialModel.rootPath )
+    ( initialModel, Navigation.newUrl <| toUrl "nothing" )
+
+
+
+-- initialModel.rootPath )
 
 
 initialModel : Model
@@ -71,6 +77,59 @@ initialModel =
 
 
 
+-- HTTP
+
+
+apiEndpoint : String
+apiEndpoint =
+    "http://localhost:4000/api/"
+
+
+
+-- lookupZipCode : String -> Task Http.Error (List String)
+-- lookupZipCode query =
+--     Http.get places ("http://api.zippopotam.us/us/" ++ query)
+-- places : Json.Decoder (List String)
+-- places =
+--   let place =
+--         Json.object2 (\city state -> city ++ ", " ++ state)
+--           ("place name" := Json.string)
+--           ("state" := Json.string)
+--   in
+--       "places" := Json.list place
+
+
+-- fetchAllSongs : Task Http.Error (List SongModel)
+fetchAllSongs : Cmd Msg
+fetchAllSongs =
+    let
+        url =
+            apiEndpoint ++ "songs"
+    in
+        Task.perform UpdateSongsFail UpdateSongs <|
+            Http.get songsDecoder url
+
+
+songsDecoder : Decoder (List SongModel)
+songsDecoder =
+    "songs" := Json.list songDecoder
+
+
+
+-- songDecoder : Decoder SongModel
+
+
+songDecoder =
+    Json.object6 SongModel
+        ("id" := Json.int)
+        ("path" := Json.string)
+        ("title" := Json.string)
+        ("artist" := Json.string)
+        ("album" := Json.string)
+        ("track" := Json.int)
+
+
+
 -- UPDATE
 
 
@@ -80,6 +139,7 @@ type Msg
     | QueueMsg Queue.Msg
     | BrowserMsg Browser.Msg
     | UpdateSongs (List SongModel)
+    | UpdateSongsFail Http.Error
     | UpdateGroups (List GroupModel)
     | KeyUp Keyboard.KeyCode
     | KeyDown Keyboard.KeyCode
@@ -96,7 +156,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
-    case action of
+    case (Debug.log "action " action) of
         KeyUp keyCode ->
             let
                 textSearchUpdateHelper code =
@@ -120,10 +180,10 @@ update action model =
             in
                 case keyCode of
                     37 ->
-                        ( Audio.previousSong model)
+                        (Audio.previousSong model)
 
                     39 ->
-                        ( Audio.nextSong model)
+                        (Audio.nextSong model)
 
                     32 ->
                         if (String.length model.keysBeingTyped > 0) then
@@ -196,7 +256,7 @@ update action model =
         UpdateSongs songs ->
             let
                 browser =
-                    Browser.initialModel
+                    Debug.log "browser" Browser.initialModel
 
                 browser' =
                     { browser | items = Helpers.makeSongItemDictionary songs }
@@ -207,6 +267,9 @@ update action model =
                   }
                 , Cmd.none
                 )
+
+        UpdateSongsFail songs ->
+            ( model, Cmd.none )
 
         UpdateGroups groups ->
             let
@@ -335,11 +398,10 @@ update action model =
             )
 
         GroupBy key ->
-            ( model, Port.groupBy key )
-
+            ( model, fetchAllSongs )
 
         UpdateAlbumArt picture ->
-            ({ model | albumArt = picture }, Cmd.none)
+            ( { model | albumArt = picture }, Cmd.none )
 
         TextSearch value ->
             ( model, Port.textSearch value )
@@ -353,8 +415,11 @@ update action model =
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
 urlUpdate newPath model =
-  (model, Cmd.none)
-    -- ( { model | rootPath = newPath }, (Port.groupBy newPath) )
+    ( model, Cmd.none )
+
+
+
+-- ( { model | rootPath = newPath }, (Port.groupBy newPath) )
 
 
 currentMouseLocation : Model -> MouseLocation
@@ -374,8 +439,7 @@ currentMouseLocation model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Port.updateSongs UpdateSongs
-        , Port.updateGroups UpdateGroups
+        [ Port.updateGroups UpdateGroups
         , Port.resetKeysBeingTyped ResetKeysBeingTyped
         , Port.updateAlbumArt UpdateAlbumArt
         , Keyboard.ups KeyUp

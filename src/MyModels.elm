@@ -17,7 +17,7 @@ type alias Model =
 
 
 type alias SongModel =
-    { id : String
+    { id : Int
     , path : String
     , title : String
     , artist : String

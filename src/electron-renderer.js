@@ -16,28 +16,6 @@ app.ports.createDatabase.subscribe(function(){
   });
 });
 
-var lastTimeoutId;
-app.ports.scrollToElement.subscribe(function(value){
-  if (lastTimeoutId) {
-    window.clearTimeout(lastTimeoutId);
-  }
-  var element = document.getElementById(value);
-
-  if (element) {
-    element.scrollIntoView();
-  }
-
-  lastTimeoutId = window.setTimeout(function(){
-    app.ports.resetKeysBeingTyped.send("nothing");
-  }, 1000);
-});
-
-app.ports.textSearch.subscribe(function(value){
-  dbUtils.textSearch(value).then(function(groups){
-    updateGroups(groups);
-  });
-});
-
 app.ports.groupBy.subscribe(function(key){
   if (key === 'song') {
     dbUtils.allSongs().then(function(songs){
@@ -48,22 +26,6 @@ app.ports.groupBy.subscribe(function(key){
       updateGroups(groups);
     });
   }
-});
-
-app.ports.pause.subscribe(function(){
-  var player = document.getElementsByTagName("audio")[0];
-  if (!player)  {return;}
-  if (player.paused) {
-    player.play();
-  } else {
-    player.pause();
-  }
-});
-
-app.ports.lookupAlbumArt.subscribe(function(albumName){
-  dbUtils.findById(albumName + "-album").then(function(doc){
-    app.ports.updateAlbumArt.send(doc.picture);
-  });
 });
 
 

@@ -1,33 +1,35 @@
 0 info it worked if it ends with ok
-1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'start' ]
-2 info using npm@3.9.5
-3 info using node@v6.2.2
+1 verbose cli [ '/home/eliot/.nvm/versions/node/v6.7.0/bin/node',
+1 verbose cli   '/home/eliot/.nvm/versions/node/v6.7.0/bin/npm',
+1 verbose cli   'start' ]
+2 info using npm@3.10.3
+3 info using node@v6.7.0
 4 verbose run-script [ 'prestart', 'start', 'poststart' ]
 5 info lifecycle elm-audio@0.1.0~prestart: elm-audio@0.1.0
 6 silly lifecycle elm-audio@0.1.0~prestart: no script for prestart, continuing
 7 info lifecycle elm-audio@0.1.0~start: elm-audio@0.1.0
 8 verbose lifecycle elm-audio@0.1.0~start: unsafe-perm in lifecycle true
-9 verbose lifecycle elm-audio@0.1.0~start: PATH: /usr/local/lib/node_modules/npm/bin/node-gyp-bin:/home/eliot/Development/elm-audio/node_modules/.bin:/usr/local/bin:/home/eliot/.rbenv/shims:/home/eliot/.rbenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/lib/jvm/java-8-oracle/bin:/usr/lib/jvm/java-8-oracle/db/bin:/usr/lib/jvm/java-8-oracle/jre/bin
-10 verbose lifecycle elm-audio@0.1.0~start: CWD: /home/eliot/Development/elm-audio
+9 verbose lifecycle elm-audio@0.1.0~start: PATH: /home/eliot/.nvm/versions/node/v6.7.0/lib/node_modules/npm/bin/node-gyp-bin:/home/eliot/Develop/elm-audio/node_modules/.bin:/home/eliot/.nvm/versions/node/v6.7.0/bin:/home/eliot/.rbenv/shims:/home/eliot/.rbenv/bin:/home/eliot/.nvm/versions/node/v6.7.0/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+10 verbose lifecycle elm-audio@0.1.0~start: CWD: /home/eliot/Develop/elm-audio
 11 silly lifecycle elm-audio@0.1.0~start: Args: [ '-c', 'electron electron-main.js' ]
 12 silly lifecycle elm-audio@0.1.0~start: Returned: code: 1  signal: null
 13 info lifecycle elm-audio@0.1.0~start: Failed to exec start script
 14 verbose stack Error: elm-audio@0.1.0 start: `electron electron-main.js`
 14 verbose stack Exit status 1
-14 verbose stack     at EventEmitter.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/lifecycle.js:245:16)
+14 verbose stack     at EventEmitter.<anonymous> (/home/eliot/.nvm/versions/node/v6.7.0/lib/node_modules/npm/lib/utils/lifecycle.js:242:16)
 14 verbose stack     at emitTwo (events.js:106:13)
 14 verbose stack     at EventEmitter.emit (events.js:191:7)
-14 verbose stack     at ChildProcess.<anonymous> (/usr/local/lib/node_modules/npm/lib/utils/spawn.js:24:14)
+14 verbose stack     at ChildProcess.<anonymous> (/home/eliot/.nvm/versions/node/v6.7.0/lib/node_modules/npm/lib/utils/spawn.js:40:14)
 14 verbose stack     at emitTwo (events.js:106:13)
 14 verbose stack     at ChildProcess.emit (events.js:191:7)
-14 verbose stack     at maybeClose (internal/child_process.js:852:16)
-14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:215:5)
+14 verbose stack     at maybeClose (internal/child_process.js:877:16)
+14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:226:5)
 15 verbose pkgid elm-audio@0.1.0
-16 verbose cwd /home/eliot/Development/elm-audio
-17 error Linux 4.4.0-36-generic
-18 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "start"
-19 error node v6.2.2
-20 error npm  v3.9.5
+16 verbose cwd /home/eliot/Develop/elm-audio
+17 error Linux 4.8.6-1-ARCH
+18 error argv "/home/eliot/.nvm/versions/node/v6.7.0/bin/node" "/home/eliot/.nvm/versions/node/v6.7.0/bin/npm" "start"
+19 error node v6.7.0
+20 error npm  v3.10.3
 21 error code ELIFECYCLE
 22 error elm-audio@0.1.0 start: `electron electron-main.js`
 22 error Exit status 1

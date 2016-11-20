@@ -1,12 +1,10 @@
 module Player exposing (..)
 
 import Html exposing (Html)
-import Http
-import Task exposing (Task)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Http
 import Html.App as Html
-import Json.Decode as Json exposing (Decoder, (:=))
 import Array exposing (Array)
 import Dict exposing (Dict)
 import String
@@ -26,6 +24,7 @@ import AlbumArt
 import SortSongs
 import Browser
 import Helpers
+import ApiHelpers
 
 
 main : Program Never
@@ -74,61 +73,6 @@ initialModel =
     , keysBeingTyped = ""
     , isShiftDown = False
     }
-
-
-
--- HTTP
-
-
-apiEndpoint : String
-apiEndpoint =
-    "http://localhost:4000/api/"
-
-
-
--- lookupZipCode : String -> Task Http.Error (List String)
--- lookupZipCode query =
---     Http.get places ("http://api.zippopotam.us/us/" ++ query)
--- places : Json.Decoder (List String)
--- places =
---   let place =
---         Json.object2 (\city state -> city ++ ", " ++ state)
---           ("place name" := Json.string)
---           ("state" := Json.string)
---   in
---       "places" := Json.list place
-
-
--- fetchAllSongs : Task Http.Error (List SongModel)
-fetchAllSongs : Cmd Msg
-fetchAllSongs =
-    let
-        url =
-            apiEndpoint ++ "songs"
-    in
-        Task.perform UpdateSongsFail UpdateSongs <|
-            Http.get songsDecoder url
-
-
-songsDecoder : Decoder (List SongModel)
-songsDecoder =
-    "songs" := Json.list songDecoder
-
-
-
--- songDecoder : Decoder SongModel
-
-
-songDecoder =
-    Json.object6 SongModel
-        ("id" := Json.int)
-        ("path" := Json.string)
-        ("title" := Json.string)
-        ("artist" := Json.string)
-        ("album" := Json.string)
-        ("track" := Json.int)
-
-
 
 -- UPDATE
 
@@ -398,7 +342,18 @@ update action model =
             )
 
         GroupBy key ->
-            ( model, fetchAllSongs )
+            case key of
+                "song" ->
+                    ( model, ApiHelpers.fetchAllSongs UpdateSongsFail UpdateSongs )
+
+                "album" ->
+                    ( model, ApiHelpers.fetchAllAlbums UpdateSongsFail UpdateGroups)
+
+                "artist" ->
+                    ( model, ApiHelpers.fetchAllArtists UpdateSongsFail UpdateGroups)
+
+                _ ->
+                    ( model, Cmd.none )
 
         UpdateAlbumArt picture ->
             ( { model | albumArt = picture }, Cmd.none )
@@ -407,10 +362,10 @@ update action model =
             ( model, Port.textSearch value )
 
         CreateDatabase ->
-            ( model, Port.createDatabase "foo" )
+            ( model, Cmd.none )
 
         DestroyDatabase ->
-            ( model, Port.destroyDatabase "bar" )
+            ( model, Cmd.none )
 
 
 urlUpdate : String -> Model -> ( Model, Cmd Msg )
@@ -439,8 +394,7 @@ currentMouseLocation model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Port.updateGroups UpdateGroups
-        , Port.resetKeysBeingTyped ResetKeysBeingTyped
+        [ Port.resetKeysBeingTyped ResetKeysBeingTyped
         , Port.updateAlbumArt UpdateAlbumArt
         , Keyboard.ups KeyUp
         , Keyboard.downs KeyDown
@@ -468,10 +422,10 @@ audioPlayer model =
         Just item ->
             case item.data of
                 Song song ->
-                    Html.map AudioMsg (Audio.view song.path)
+                    Html.map AudioMsg (Audio.view song.id)
 
                 somthingElse ->
-                    Html.map AudioMsg (Audio.view "this should never happen")
+                    Html.map AudioMsg (Audio.view 0) -- This should never happen
 
         Nothing ->
             Html.div [] []

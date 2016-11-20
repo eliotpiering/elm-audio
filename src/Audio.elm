@@ -8,6 +8,7 @@ import MyStyle
 import Array
 import MyModels
 import Helpers
+import ApiHelpers
 
 
 type alias ParentModel =
@@ -15,12 +16,12 @@ type alias ParentModel =
 
 
 type alias Model =
-    String
+    Int
 
 
-init : String -> Model
-init path =
-    path
+init : Int -> Model
+init id =
+    id
 
 
 update : Msg -> ParentModel -> (ParentModel, Cmd msg)
@@ -72,6 +73,11 @@ type Msg
     = NextSong
     | PreviousSong
 
+streamPath : Model -> String
+streamPath id =
+    -- TODO this is stupid
+    ApiHelpers.apiEndpoint ++ "/stream/" ++ (toString id)
+
 
 view : Model -> Html Msg
 view model =
@@ -79,7 +85,7 @@ view model =
         [ (Html.div [ ]
             [ Html.audio
                 [ Attr.id "audio-player-container"
-                , Attr.src model
+                , Attr.src (streamPath model)
                 , Attr.type' "audio/mp3"
                 , Attr.controls True
                 , Attr.autoplay True

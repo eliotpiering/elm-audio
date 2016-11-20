@@ -1,2 +1,1 @@
-cd /home/eliot/Develop/elm-audio
-nohup npm start < /dev/null &
+/usr/bin/chromium /home/eliot/Develop/elm-audio/index.html < /dev/null

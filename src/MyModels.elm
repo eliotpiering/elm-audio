@@ -22,9 +22,11 @@ type alias SongModel =
     , title : String
     , artist : String
     , album : String
-    , track : Int
-    -- , picture : String
+    , track :
+        Int
+        -- , picture : String
     }
+
 
 type alias GroupModel =
     { title : String
@@ -37,6 +39,7 @@ type alias QueueModel =
     , mouseOver : Bool
     , mouseOverItem : Int
     }
+
 
 type alias BrowserModel =
     { isMouseOver : Bool
@@ -59,7 +62,8 @@ type ItemData
     = Song SongModel
     | Group GroupModel
 
+
 type MouseLocation
-  = BrowserWindow
-  | QueueWindow
-  | OtherWindow
+    = BrowserWindow
+    | QueueWindow
+    | OtherWindow

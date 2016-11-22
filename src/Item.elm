@@ -3,7 +3,6 @@ module Item exposing (..)
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attr
-import Html.App as Html
 import MyModels exposing (..)
 import MyStyle exposing (..)
 
@@ -49,20 +48,20 @@ browserItemView : Maybe Pos -> String -> ItemModel -> Html Msg
 browserItemView maybeDragPos id model =
     case model.data of
         Song songModel ->
-            Html.li (List.append [ Attr.class "song-item" ] <| commonAttrubutes model)
-                <| commonHtml model maybeDragPos songModel
+            Html.li (List.append [ Attr.class "song-item" ] <| commonAttrubutes model) <|
+                commonHtml model maybeDragPos songModel
 
         Group groupModel ->
-            Html.li (List.append [ Attr.class "group-item", Attr.id <| "group-item-" ++ id ] <| commonAttrubutes model)
-                <| commonHtml model maybeDragPos groupModel
+            Html.li (List.append [ Attr.class "group-item", Attr.id <| "group-item-" ++ id ] <| commonAttrubutes model) <|
+                commonHtml model maybeDragPos groupModel
 
 
 queueItemView : Maybe Pos -> Bool -> String -> ItemModel -> Html Msg
 queueItemView maybeDragPos isCurrentSong id model =
     case model.data of
         Song songModel ->
-            Html.li (List.append [ Attr.class "song-item", MyStyle.currentSong isCurrentSong ] <| commonAttrubutes model)
-                <| commonHtml model maybeDragPos songModel
+            Html.li (List.append [ Attr.class "song-item", MyStyle.currentSong isCurrentSong ] <| commonAttrubutes model) <|
+                commonHtml model maybeDragPos songModel
 
         Group groupModel ->
             Html.li []

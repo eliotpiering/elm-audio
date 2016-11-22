@@ -4,6 +4,8 @@ import MyModels exposing (..)
 
 
 -- Only works for items that are songs
+
+
 byAlbumAndTrack : List ItemModel -> List ItemModel
 byAlbumAndTrack =
     List.sortWith
@@ -26,16 +28,21 @@ byAlbumAndTrack =
                     EQ
         )
 
+
+
 -- Only works for items that are groups
-byGroupTitle: List (String, ItemModel) -> List (String, ItemModel)
+
+
+byGroupTitle : List ( String, ItemModel ) -> List ( String, ItemModel )
 byGroupTitle =
     List.sortWith
-        (\(_, item1) (_, item2) ->
+        (\( _, item1 ) ( _, item2 ) ->
             case item1.data of
                 Group g1 ->
                     case item2.data of
                         Group g2 ->
-                            compare g1.title g2.title 
+                            compare g1.title g2.title
+
                         anythingElse ->
                             EQ
 

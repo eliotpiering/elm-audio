@@ -1,9 +1,9 @@
 module ApiHelpers exposing (apiEndpoint, fetchAllAlbums, fetchAllArtists, fetchAllSongs)
 
 import Http
-import Json.Decode as Json exposing (Decoder, (:=))
-import Task exposing (Task)
+import Json.Decode as Json exposing (Decoder)
 import MyModels exposing (..)
+import Result
 
 
 apiEndpoint : String
@@ -11,56 +11,64 @@ apiEndpoint =
     "http://localhost:4000/api/"
 
 
+
 -- fetchAllSongs : Msg -> Msg -> Cmd Msg
-fetchAllSongs failAction successAction =
+fetchAllSongs successAction =
     let
         url =
             apiEndpoint ++ "songs"
     in
-        Task.perform failAction successAction <|
-            Http.get songsDecoder url
+        Http.send successAction <|
+            Http.get url songsDecoder
+
 
 
 -- fetchAllArtists : Msg -> Msg -> Cmd Msg
-fetchAllArtists failAction successAction =
-    let
+
+
+fetchAllArtists successAction =
+    let 
         url =
             apiEndpoint ++ "artists"
     in
-        Task.perform failAction successAction <|
-            Http.get artistsDecoder url
+        Http.send successAction  <|
+            Http.get url artistsDecoder
+
 
 
 -- fetchAllAlbums : Msg -> Msg -> Cmd Msg
-fetchAllAlbums failAction successAction =
+
+
+fetchAllAlbums successAction =
     let
         url =
             apiEndpoint ++ "albums"
     in
-        Task.perform failAction successAction <|
-            Http.get albumsDecoder url
+        Http.send successAction <|
+            Http.get url albumsDecoder
 
 
 albumsDecoder : Decoder (List GroupModel)
 albumsDecoder =
-    "albums" := Json.list groupDecoder
+    Json.field "albums" <| Json.list groupDecoder
 
 
 artistsDecoder : Decoder (List GroupModel)
 artistsDecoder =
-    "artists" := Json.list groupDecoder
+    Json.field "artists" <| Json.list groupDecoder
 
 
 songsDecoder : Decoder (List SongModel)
 songsDecoder =
-    "songs" := Json.list songDecoder
+    Json.field "songs" <| Json.list songDecoder
 
 
 groupDecoder : Decoder GroupModel
 groupDecoder =
-    Json.object2 GroupModel
-        ("title" := Json.string)
+    Json.map2 GroupModel
+        (Json.field "title" Json.string)
         songsDecoder
+
 
 
 -- TODO embed the songs in the json
@@ -68,10 +76,10 @@ groupDecoder =
 
 songDecoder : Decoder SongModel
 songDecoder =
-    Json.object6 SongModel
-        ("id" := Json.int)
-        ("path" := Json.string)
-        ("title" := Json.string)
-        ("artist" := Json.string)
-        ("album" := Json.string)
-        ("track" := Json.int)
+    Json.map6 SongModel
+        (Json.field "id" Json.int)
+        (Json.field "path" Json.string)
+        (Json.field "title" Json.string)
+        (Json.field "artist" Json.string)
+        (Json.field "album" Json.string)
+        (Json.field "track" Json.int)

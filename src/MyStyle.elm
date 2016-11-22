@@ -37,7 +37,8 @@ dragging maybeDragPos isSelected =
                         , ( "z-index", "-1" )
                         , ( "color", "white" )
                         , ( "background-color", "black" )
-                        , ( "pointer-events", "none") -- make sure not to trigger mouseenters on the dragged element
+                        , ( "pointer-events", "none" )
+                          -- make sure not to trigger mouseenters on the dragged element
                         ]
             else
                 style [ ( "display", "none" ) ]

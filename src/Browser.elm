@@ -3,7 +3,6 @@ module Browser exposing (..)
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attr
-import Html.App as Html
 import MyModels exposing (..)
 import MyStyle exposing (..)
 import Dict exposing (Dict)
@@ -40,40 +39,40 @@ update msg isShiftDown model =
             case Dict.get id model.items of
                 Just item ->
                     let
-                        ( item', itemCmd ) =
+                        ( item_, itemCmd ) =
                             Item.update msg item
 
-                        model' =
-                            { model | items = Dict.insert id item' model.items }
+                        model_ =
+                            { model | items = Dict.insert id item_ model.items }
                     in
                         case itemCmd of
                             Just (Item.DoubleClicked) ->
-                                case item'.data of
+                                case item_.data of
                                     Group groupModel ->
                                         let
                                             newItems =
                                                 Helpers.makeSongItemDictionary groupModel.songs
                                         in
-                                            ( { model' | items = newItems }, Nothing )
+                                            ( { model_ | items = newItems }, Nothing )
 
                                     Song _ ->
-                                        ( model', Just <| AddSong item' )
+                                        ( model_, Just <| AddSong item_ )
 
                             Just (Item.Clicked) ->
                                 if isShiftDown then
-                                    ( model', Nothing )
+                                    ( model_, Nothing )
                                 else
                                     let
                                         cleanItems =
                                             resetItems model.items
 
                                         itemsWithOneSelected =
-                                            Dict.insert id item' cleanItems
+                                            Dict.insert id item_ cleanItems
                                     in
                                         ( { model | items = itemsWithOneSelected }, Nothing )
 
                             anythingElse ->
-                                ( model', Nothing )
+                                ( model_, Nothing )
 
                 Nothing ->
                     ( model, Nothing )
@@ -90,7 +89,7 @@ update msg isShiftDown model =
 
 resetItems : ItemDictionary -> ItemDictionary
 resetItems =
-    Dict.map (\id item -> Item.update Item.Reset item |> fst)
+    Dict.map (\id item -> Item.update Item.Reset item |> Tuple.first)
 
 
 view : Maybe Pos -> BrowserModel -> Html Msg

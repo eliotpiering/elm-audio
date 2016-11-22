@@ -4,20 +4,16 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as Events
 import Http
-import Html.App as Html
 import Array exposing (Array)
 import Dict exposing (Dict)
 import String
 import Debug
-import Navigation
 import MyStyle
 import Port
 import Keyboard
 import Char
 import Mouse
-import Focus
 import MyModels exposing (..)
-import Window as Win
 import Audio
 import Queue
 import AlbumArt
@@ -27,35 +23,19 @@ import Helpers
 import ApiHelpers
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Navigation.program urlParser
+    Html.program
         { init = init
         , view = view
         , update = update
-        , urlUpdate = urlUpdate
         , subscriptions = subscriptions
         }
 
 
-toUrl : String -> String
-toUrl path =
-    "#/" ++ (Debug.log "to_url" path)
-
-
-fromUrl : String -> String
-fromUrl url =
-    String.dropLeft 1 url
-
-
-urlParser : Navigation.Parser String
-urlParser =
-    Navigation.makeParser (fromUrl << .hash)
-
-
-init : String -> ( Model, Cmd Msg )
-init s =
-    ( initialModel, Navigation.newUrl <| toUrl "nothing" )
+init : ( Model, Cmd Msg )
+init  =
+    ( initialModel, Cmd.none )
 
 
 
@@ -74,17 +54,17 @@ initialModel =
     , isShiftDown = False
     }
 
+
+
 -- UPDATE
 
 
 type Msg
-    = NavigationBack
-    | AudioMsg Audio.Msg
+    = AudioMsg Audio.Msg
     | QueueMsg Queue.Msg
     | BrowserMsg Browser.Msg
-    | UpdateSongs (List SongModel)
-    | UpdateSongsFail Http.Error
-    | UpdateGroups (List GroupModel)
+    | UpdateSongs (Result Http.Error (List SongModel) )
+    | UpdateGroups (Result Http.Error (List GroupModel) )
     | KeyUp Keyboard.KeyCode
     | KeyDown Keyboard.KeyCode
     | MouseDowns { x : Int, y : Int }
@@ -152,32 +132,29 @@ update action model =
         ResetKeysBeingTyped str ->
             ( { model | keysBeingTyped = "" }, Cmd.none )
 
-        NavigationBack ->
-            ( model, Navigation.back <| Debug.log "nav back " 1 )
-
         AudioMsg msg ->
             Audio.update msg model
 
         QueueMsg msg ->
             let
-                ( queue', queueCmd ) =
+                ( queue_, queueCmd ) =
                     Queue.update msg model.queue
             in
                 case queueCmd of
                     Just (Queue.UpdateCurrentSong newSong) ->
                         ( { model
-                            | queue = queue'
+                            | queue = queue_
                             , currentSong = newSong
                           }
-                        , Helpers.lookupAlbumArt newSong queue'.array
+                        , Helpers.lookupAlbumArt newSong queue_.array
                         )
 
                     anythingElse ->
-                        ( { model | queue = queue' }, Cmd.none )
+                        ( { model | queue = queue_ }, Cmd.none )
 
         BrowserMsg msg ->
             let
-                ( browser', browserCmd ) =
+                ( browser_, browserCmd ) =
                     Browser.update msg model.isShiftDown model.browser
             in
                 case browserCmd of
@@ -185,50 +162,53 @@ update action model =
                         case item.data of
                             Song songModel ->
                                 ( { model
-                                    | browser = browser'
-                                    , queue = fst <| Queue.update (Queue.Drop [ item ] model.currentSong) model.queue
+                                    | browser = browser_
+                                    , queue = Tuple.first <| Queue.update (Queue.Drop [ item ] model.currentSong) model.queue
                                   }
                                 , Cmd.none
                                 )
 
                             anythingElse ->
-                                ( { model | browser = browser' }, Cmd.none )
+                                ( { model | browser = browser_ }, Cmd.none )
 
                     anythingElse ->
-                        ( { model | browser = browser' }, Cmd.none )
+                        ( { model | browser = browser_ }, Cmd.none )
 
-        UpdateSongs songs ->
+        UpdateSongs (Ok songs) ->
             let
                 browser =
                     Debug.log "browser" Browser.initialModel
 
-                browser' =
+                browser_ =
                     { browser | items = Helpers.makeSongItemDictionary songs }
             in
                 ( { model
                     | browser =
-                        browser'
+                        browser_
                   }
                 , Cmd.none
                 )
 
-        UpdateSongsFail songs ->
+        UpdateSongs (Err _) ->
             ( model, Cmd.none )
 
-        UpdateGroups groups ->
+        UpdateGroups (Ok groups) ->
             let
                 browser =
                     Browser.initialModel
 
-                browser' =
+                browser_ =
                     { browser | items = Helpers.makeGroupItemDictionary groups }
             in
                 ( { model
                     | browser =
-                        browser'
+                        browser_
                   }
                 , Cmd.none
                 )
+
+        UpdateGroups (Err ok) ->
+            ( model, Cmd.none )
 
         MouseDowns xy ->
             ( { model
@@ -246,7 +226,7 @@ update action model =
                 dragEnd =
                     currentMouseLocation model
 
-                model' =
+                model_ =
                     { model | dragStart = Nothing }
             in
                 case maybeDragStart of
@@ -274,40 +254,40 @@ update action model =
                                                 )
                                                 []
 
-                                    ( queue', queueCmd ) =
+                                    ( queue_, queueCmd ) =
                                         Queue.update (Queue.Drop itemsToDrop model.currentSong) model.queue
                                 in
                                     case queueCmd of
                                         Just (Queue.UpdateCurrentSong newSong) ->
-                                            ( { model'
-                                                | queue = queue'
-                                                , browser = Browser.update Browser.Reset False model.browser |> fst
+                                            ( { model_
+                                                | queue = queue_
+                                                , browser = Browser.update Browser.Reset False model.browser |> Tuple.first
                                                 , currentSong = newSong
                                               }
-                                            , Helpers.lookupAlbumArt newSong queue'.array
+                                            , Helpers.lookupAlbumArt newSong queue_.array
                                             )
 
                                         anythingElse ->
-                                            ( model', Cmd.none )
+                                            ( model_, Cmd.none )
 
                             anythingElse ->
-                                ( model', Cmd.none )
+                                ( model_, Cmd.none )
 
                     Just QueueWindow ->
                         case dragEnd of
                             QueueWindow ->
                                 -- Reordering songs in the queue
                                 let
-                                    ( queue', queueCmd ) =
+                                    ( queue_, queueCmd ) =
                                         Queue.update (Queue.Reorder model.currentSong) model.queue
                                 in
                                     case queueCmd of
                                         Just (Queue.UpdateCurrentSong newSong) ->
-                                            ( { model'
-                                                | queue = queue'
+                                            ( { model_
+                                                | queue = queue_
                                                 , currentSong = newSong
                                               }
-                                            , Helpers.lookupAlbumArt newSong queue'.array
+                                            , Helpers.lookupAlbumArt newSong queue_.array
                                             )
 
                                         anythingElse ->
@@ -316,23 +296,23 @@ update action model =
                             anythingElse ->
                                 -- Removing songs from the queue
                                 let
-                                    ( queue', queueCmd ) =
+                                    ( queue_, queueCmd ) =
                                         Queue.update (Queue.Remove model.currentSong) model.queue
                                 in
                                     case queueCmd of
                                         Just (Queue.UpdateCurrentSong newSong) ->
-                                            ( { model'
-                                                | queue = queue'
+                                            ( { model_
+                                                | queue = queue_
                                                 , currentSong = newSong
                                               }
-                                            , Helpers.lookupAlbumArt newSong queue'.array
+                                            , Helpers.lookupAlbumArt newSong queue_.array
                                             )
 
                                         anythingElse ->
                                             ( model, Cmd.none )
 
                     anythingElse ->
-                        ( model', Cmd.none )
+                        ( model_, Cmd.none )
 
         MouseMoves xy ->
             ( { model
@@ -344,13 +324,13 @@ update action model =
         GroupBy key ->
             case key of
                 "song" ->
-                    ( model, ApiHelpers.fetchAllSongs UpdateSongsFail UpdateSongs )
+                    ( model, ApiHelpers.fetchAllSongs UpdateSongs )
 
                 "album" ->
-                    ( model, ApiHelpers.fetchAllAlbums UpdateSongsFail UpdateGroups)
+                    ( model, ApiHelpers.fetchAllAlbums UpdateGroups )
 
                 "artist" ->
-                    ( model, ApiHelpers.fetchAllArtists UpdateSongsFail UpdateGroups)
+                    ( model, ApiHelpers.fetchAllArtists UpdateGroups )
 
                 _ ->
                     ( model, Cmd.none )
@@ -366,15 +346,6 @@ update action model =
 
         DestroyDatabase ->
             ( model, Cmd.none )
-
-
-urlUpdate : String -> Model -> ( Model, Cmd Msg )
-urlUpdate newPath model =
-    ( model, Cmd.none )
-
-
-
--- ( { model | rootPath = newPath }, (Port.groupBy newPath) )
 
 
 currentMouseLocation : Model -> MouseLocation
@@ -425,8 +396,9 @@ audioPlayer model =
                     Html.map AudioMsg (Audio.view song.id)
 
                 somthingElse ->
-                    Html.map AudioMsg (Audio.view 0) -- This should never happen
+                    Html.map AudioMsg (Audio.view 0)
 
+        -- This should never happen
         Nothing ->
             Html.div [] []
 

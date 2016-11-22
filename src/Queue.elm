@@ -3,7 +3,6 @@ module Queue exposing (..)
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes as Attr
-import Html.App as Html
 import MyModels exposing (..)
 import MyStyle exposing (..)
 import Array exposing (Array)
@@ -42,21 +41,21 @@ update msg model =
             case Array.get id model.array of
                 Just item ->
                     let
-                        ( item', itemCmd ) =
+                        ( item_, itemCmd ) =
                             Item.update msg item
 
-                        model' =
-                            { model | array = Array.set id item' model.array }
+                        model_ =
+                            { model | array = Array.set id item_ model.array }
                     in
                         case itemCmd of
                             Just (Item.MouseEntered) ->
-                                ( { model' | mouseOverItem = id }, Nothing )
+                                ( { model_ | mouseOverItem = id }, Nothing )
 
                             Just (Item.DoubleClicked) ->
-                                ( model', Just <| UpdateCurrentSong id )
+                                ( model_, Just <| UpdateCurrentSong id )
 
                             anythingElse ->
-                                ( model', Nothing )
+                                ( model_, Nothing )
 
                 Nothing ->
                     ( model, Nothing )
@@ -80,9 +79,9 @@ update msg model =
             in
                 ( { model
                     | array =
-                        resetQueue
-                            <| Array.append left
-                            <| Array.append newArrayItems right
+                        resetQueue <|
+                            Array.append left <|
+                                Array.append newArrayItems right
                   }
                 , Just <| UpdateCurrentSong newQueueIndex
                 )
@@ -137,10 +136,10 @@ update msg model =
                                 else
                                     currentQueueIndex
 
-                            array' =
+                            array_ =
                                 Array.append (Array.slice 0 index model.array) (Array.slice (index + 1) -1 model.array)
                         in
-                            ( { model | array = resetQueue array' }, Just <| UpdateCurrentSong newQueueIndex )
+                            ( { model | array = resetQueue array_ }, Just <| UpdateCurrentSong newQueueIndex )
 
                     Nothing ->
                         ( model, Nothing )
@@ -148,7 +147,7 @@ update msg model =
 
 resetQueue : Array ItemModel -> Array ItemModel
 resetQueue =
-    Array.map (Item.update Item.Reset >> fst)
+    Array.map (Item.update Item.Reset >> Tuple.first)
 
 
 itemToHtml : Maybe Pos -> Int -> ( Int, ItemModel ) -> Html Msg
@@ -165,7 +164,7 @@ view maybePos currentSong model =
         , Events.onMouseLeave MouseLeave
         , MyStyle.mouseOver model.mouseOver
         ]
-        [ Html.ul []
-            <| Array.toList
-            <| Array.indexedMap ((\id item -> itemToHtml maybePos currentSong ( id, item ))) model.array
+        [ Html.ul [] <|
+            Array.toList <|
+                Array.indexedMap ((\id item -> itemToHtml maybePos currentSong ( id, item ))) model.array
         ]

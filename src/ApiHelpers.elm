@@ -1,10 +1,8 @@
-module ApiHelpers exposing (apiEndpoint, fetchAllAlbums, fetchAllArtists, fetchAllSongs, fetchSongsFromGroups)
+module ApiHelpers exposing (apiEndpoint, fetchAllAlbums, fetchAllArtists, fetchAllSongs, fetchSongsFromGroups, fetchSongsFromArtist, fetchSongsFromAlbum)
 
 import Http
 import Json.Decode as Json exposing (Decoder)
 import MyModels exposing (..)
-import Result
-import Queue exposing (Msg)
 
 
 apiEndpoint : String
@@ -12,6 +10,22 @@ apiEndpoint =
     "http://localhost:4000/api/"
 
 
+fetchSongsFromArtist id groupAction =
+    let
+        url =
+            apiEndpoint ++ "artists/" ++ (toString id) ++ "/songs"
+    in
+        Http.send groupAction <|
+            Http.get url songsDecoder
+
+
+fetchSongsFromAlbum id groupAction =
+    let
+        url =
+            apiEndpoint ++ "albums/" ++ (toString id) ++ "/songs"
+    in
+        Http.send groupAction <|
+            Http.get url songsDecoder
 
 
 fetchSongsFromGroups items groupAction =
@@ -28,8 +42,8 @@ fetchSongsFromGroups items groupAction =
                             Http.send groupAction <|
                                 Http.get url songsDecoder
 
-                    Song _->
-                       Cmd.none
+                    Song _ ->
+                        Cmd.none
             )
 
 

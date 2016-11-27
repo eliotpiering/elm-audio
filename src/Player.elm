@@ -8,7 +8,6 @@ import Array exposing (Array)
 import Dict exposing (Dict)
 import String
 import Debug
-import MyStyle
 import Port
 import Keyboard
 import Char
@@ -17,15 +16,18 @@ import MyModels exposing (..)
 import Audio
 import Queue
 import AlbumArt
-import SortSongs
 import Browser
 import Helpers
 import ApiHelpers
+import Navigation exposing (Location)
+import UrlParser
+import NavigationParser exposing (..)
 
 
 main : Program Never Model Msg
 main =
-    Html.program
+    Navigation.program
+        UrlUpdate
         { init = init
         , view = view
         , update = update
@@ -33,8 +35,8 @@ main =
         }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Location -> ( Model, Cmd Msg )
+init location =
     ( initialModel, Cmd.none )
 
 
@@ -72,9 +74,8 @@ type Msg
     | GroupBy String
     | UpdateAlbumArt String
     | TextSearch String
-    | DestroyDatabase
-    | CreateDatabase
     | ResetKeysBeingTyped String
+    | UrlUpdate Location
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -171,7 +172,16 @@ update action model =
                                 ( { model | browser = browser_ }, Cmd.none )
 
                     Just (Browser.OpenGroup itemModel) ->
-                        ( { model | browser = browser_ }, Cmd.batch (ApiHelpers.fetchSongsFromGroups [ itemModel ] OpenSongsInBrowser ) )
+                        let
+                            model_ =
+                                { model | browser = browser_ }
+                        in
+                            case itemModel.data of
+                                Song songModel ->
+                                    ( model_, Cmd.none )
+
+                                Group groupModel ->
+                                        ( model_, Navigation.newUrl <| "#" ++ groupModel.kind ++ "/" ++ (toString groupModel.id) )
 
                     anythingElse ->
                         ( { model | browser = browser_ }, Cmd.none )
@@ -323,7 +333,9 @@ update action model =
 
                                     ( queue_, queueCmd ) =
                                         Queue.update (Queue.Drop selectedSongItems model.currentSong) model.queue
-                                    ( browser_, _) = Browser.update Browser.Reset False model.browser
+
+                                    ( browser_, _ ) =
+                                        Browser.update Browser.Reset False model.browser
                                 in
                                     case queueCmd of
                                         Just (Queue.UpdateCurrentSong newSong) ->
@@ -397,13 +409,13 @@ update action model =
         GroupBy key ->
             case key of
                 "song" ->
-                    ( model, ApiHelpers.fetchAllSongs UpdateSongs )
+                    ( model, Navigation.newUrl "#songs" )
 
                 "album" ->
-                    ( model, ApiHelpers.fetchAllAlbums UpdateGroups )
+                    ( model, Navigation.newUrl "#albums" )
 
                 "artist" ->
-                    ( model, ApiHelpers.fetchAllArtists UpdateGroups )
+                    ( model, Navigation.newUrl "#artists" )
 
                 _ ->
                     ( model, Cmd.none )
@@ -414,11 +426,25 @@ update action model =
         TextSearch value ->
             ( model, Port.textSearch value )
 
-        CreateDatabase ->
-            ( model, Cmd.none )
+        UrlUpdate location ->
+            case urlParser location of
+                ArtistsRoute ->
+                    ( model, ApiHelpers.fetchAllArtists UpdateGroups )
 
-        DestroyDatabase ->
-            ( model, Cmd.none )
+                AlbumsRoute ->
+                    ( model, ApiHelpers.fetchAllAlbums UpdateGroups )
+
+                SongsRoute ->
+                    ( model, ApiHelpers.fetchAllSongs UpdateSongs )
+
+                ArtistRoute id ->
+                    ( model, ApiHelpers.fetchSongsFromArtist id OpenSongsInBrowser)
+
+                AlbumRoute id ->
+                    ( model, ApiHelpers.fetchSongsFromAlbum id OpenSongsInBrowser)
+
+                NotFoundRoute ->
+                    ( model, Cmd.none )
 
 
 currentMouseLocation : Model -> MouseLocation
@@ -511,6 +537,4 @@ navigationView =
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
         , Html.li [ Events.onClick (GroupBy "song") ] [ Html.text "Group By song" ]
         , Html.input [ Events.onInput TextSearch ] []
-        , Html.li [ Events.onClick CreateDatabase ] [ Html.text "Create Database" ]
-        , Html.li [ Events.onClick DestroyDatabase ] [ Html.text "Destroy Database" ]
         ]

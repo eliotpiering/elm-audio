@@ -93,8 +93,7 @@ type Msg
 
 streamPath : Model -> String
 streamPath id =
-    -- TODO this is stupid
-    ApiHelpers.apiEndpoint ++ "/stream/" ++ (toString id)
+    ApiHelpers.apiEndpoint ++ "stream/" ++ (toString id)
 
 
 view : Model -> Html Msg

@@ -22,14 +22,14 @@ type alias SongModel =
     , title : String
     , artist : String
     , album : String
-    , track :
-        Int
-        -- , picture : String
+    , track : Int
     }
 
 
 type alias GroupModel =
-    { title : String
+    { id : Int
+    , kind : String
+    , title : String
     , songs : List SongModel
     }
 

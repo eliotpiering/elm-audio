@@ -1,9 +1,10 @@
-module ApiHelpers exposing (apiEndpoint, fetchAllAlbums, fetchAllArtists, fetchAllSongs)
+module ApiHelpers exposing (apiEndpoint, fetchAllAlbums, fetchAllArtists, fetchAllSongs, fetchSongsFromGroups)
 
 import Http
 import Json.Decode as Json exposing (Decoder)
 import MyModels exposing (..)
 import Result
+import Queue exposing (Msg)
 
 
 apiEndpoint : String
@@ -12,7 +13,26 @@ apiEndpoint =
 
 
 
--- fetchAllSongs : Msg -> Msg -> Cmd Msg
+
+fetchSongsFromGroups items groupAction =
+    -- TODO ideally this only takes groups and there is a separate path to add songs to a queue
+    items
+        |> List.map
+            (\item ->
+                case item.data of
+                    Group group ->
+                        let
+                            url =
+                                apiEndpoint ++ group.kind ++ "/" ++ (toString group.id) ++ "/songs"
+                        in
+                            Http.send groupAction <|
+                                Http.get url songsDecoder
+
+                    Song _->
+                       Cmd.none
+            )
+
+
 fetchAllSongs successAction =
     let
         url =
@@ -27,11 +47,11 @@ fetchAllSongs successAction =
 
 
 fetchAllArtists successAction =
-    let 
+    let
         url =
             apiEndpoint ++ "artists"
     in
-        Http.send successAction  <|
+        Http.send successAction <|
             Http.get url artistsDecoder
 
 
@@ -65,13 +85,11 @@ songsDecoder =
 
 groupDecoder : Decoder GroupModel
 groupDecoder =
-    Json.map2 GroupModel
+    Json.map4 GroupModel
+        (Json.field "id" Json.int)
+        (Json.field "kind" Json.string)
         (Json.field "title" Json.string)
         songsDecoder
-
-
-
--- TODO embed the songs in the json
 
 
 songDecoder : Decoder SongModel

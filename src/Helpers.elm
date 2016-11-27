@@ -1,4 +1,4 @@
-module Helpers exposing (makeSongItemDictionary, makeGroupItemDictionary, getItemTitle, lookupAlbumArt)
+module Helpers exposing (makeSongItemDictionary, makeGroupItemDictionary, getItemTitle, lookupAlbumArt, makeSongItemList, isSong)
 
 import Dict exposing (Dict)
 import Array exposing (Array)
@@ -7,6 +7,10 @@ import Port
 
 
 -- Public
+
+makeSongItemList : List SongModel -> List ItemModel
+makeSongItemList songs =
+    songs |> List.map (\s -> {data = Song s, isSelected = False, isMouseOver = False})
 
 
 makeSongItemDictionary : List SongModel -> ItemDictionary
@@ -27,6 +31,14 @@ getItemTitle item =
 
         Group groupModel ->
             groupModel.title
+
+isSong : ItemModel -> Bool
+isSong item =
+    case item.data of
+        Song _ ->
+            True
+        _ ->
+            False
 
 
 lookupAlbumArt : Int -> Array ItemModel -> Cmd js

@@ -14,6 +14,7 @@ import SortSongs
 type Msg
     = ItemMsg String Item.Msg
     | Reset
+    | UpdateSongs ItemDictionary
     | MouseEnter
     | MouseLeave
 
@@ -49,11 +50,12 @@ update msg isShiftDown model =
                             Just (Item.DoubleClicked) ->
                                 case item_.data of
                                     Group groupModel ->
-                                        let
-                                            newItems =
-                                                Helpers.makeSongItemDictionary groupModel.songs
-                                        in
-                                            ( { model_ | items = newItems }, Nothing )
+                                        -- let
+                                        --     newItems =
+                                        --         Helpers.makeSongItemDictionary groupModel.songs
+                                        -- in
+                                        --     ( { model_ | items = newItems }, Nothing )
+                                        ( model_, Just <| OpenGroup item_)
 
                                     Song _ ->
                                         ( model_, Just <| AddSong item_ )
@@ -79,6 +81,9 @@ update msg isShiftDown model =
 
         Reset ->
             ( { model | items = resetItems model.items }, Nothing )
+
+        UpdateSongs itemModels ->
+            ({model | items = itemModels}, Nothing)
 
         MouseEnter ->
             ( { model | isMouseOver = True }, Nothing )

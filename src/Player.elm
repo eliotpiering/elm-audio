@@ -73,7 +73,6 @@ type Msg
     | MouseMoves { x : Int, y : Int }
     | GroupBy String
     | UpdateAlbumArt String
-    | TextSearch String
     | ResetKeysBeingTyped String
     | UrlUpdate Location
 
@@ -181,7 +180,7 @@ update action model =
                                     ( model_, Cmd.none )
 
                                 Group groupModel ->
-                                        ( model_, Navigation.newUrl <| "#" ++ groupModel.kind ++ "/" ++ (toString groupModel.id) )
+                                    ( model_, Navigation.newUrl <| "#" ++ groupModel.kind ++ "/" ++ (toString groupModel.id) )
 
                     anythingElse ->
                         ( { model | browser = browser_ }, Cmd.none )
@@ -423,9 +422,6 @@ update action model =
         UpdateAlbumArt picture ->
             ( { model | albumArt = picture }, Cmd.none )
 
-        TextSearch value ->
-            ( model, Port.textSearch value )
-
         UrlUpdate location ->
             case urlParser location of
                 ArtistsRoute ->
@@ -438,10 +434,10 @@ update action model =
                     ( model, ApiHelpers.fetchAllSongs UpdateSongs )
 
                 ArtistRoute id ->
-                    ( model, ApiHelpers.fetchSongsFromArtist id OpenSongsInBrowser)
+                    ( model, ApiHelpers.fetchSongsFromArtist id OpenSongsInBrowser )
 
                 AlbumRoute id ->
-                    ( model, ApiHelpers.fetchSongsFromAlbum id OpenSongsInBrowser)
+                    ( model, ApiHelpers.fetchSongsFromAlbum id OpenSongsInBrowser )
 
                 NotFoundRoute ->
                     ( model, Cmd.none )
@@ -497,9 +493,8 @@ audioPlayer model =
                 somthingElse ->
                     Html.map AudioMsg (Audio.view 0)
 
-        -- This should never happen
         Nothing ->
-            Html.div [] []
+            Html.div [ Attr.id "audio-view-container" ] []
 
 
 browserView : Model -> Html Msg
@@ -536,5 +531,4 @@ navigationView =
         [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
         , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
         , Html.li [ Events.onClick (GroupBy "song") ] [ Html.text "Group By song" ]
-        , Html.input [ Events.onInput TextSearch ] []
         ]

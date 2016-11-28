@@ -12,9 +12,29 @@ none =
     style []
 
 
+blue =
+    "#004489"
+
+
+pale =
+    "#E1E1D6"
+
+
+lightGrey =
+    "#D3D9DF"
+
+
+grey =
+    "#989898"
+
+
+darkGrey =
+    "#565656"
+
+
 queueViewContainer canDrop =
     if canDrop then
-        style [ ( "border", "solid black 2px" ) ]
+        style [ ( "border", "solid " ++ grey ++ " 2px" ) ]
     else
         style []
 
@@ -34,9 +54,11 @@ dragging maybeDragPos isSelected =
                         [ ( "position", "fixed" )
                         , ( "left", xPos )
                         , ( "top", yPos )
-                        , ( "z-index", "-1" )
+                        , ( "z-index", "99" )
                         , ( "color", "white" )
-                        , ( "background-color", "black" )
+                        , ( "background-color", (darkGrey) )
+                        , ( "padding", "10px" )
+                        , ( "border-radius", "8px" )
                         , ( "pointer-events", "none" )
                           -- make sure not to trigger mouseenters on the dragged element
                         ]
@@ -50,7 +72,7 @@ dragging maybeDragPos isSelected =
 mouseOver isMouseOver =
     if isMouseOver then
         style
-            [ ( "border", "1px solid black" )
+            [ ( "border", ("1px solid " ++ grey) )
             ]
     else
         style []
@@ -58,7 +80,7 @@ mouseOver isMouseOver =
 
 currentSong isCurrentSong =
     if isCurrentSong then
-        style [ ( "color", "white" ), ( "background-color", "blue" ) ]
+        style [ ( "color", "white" ), ( "background-color", blue ) ]
     else
         style []
 
@@ -67,7 +89,7 @@ isSelected isSelected =
     if isSelected then
         style
             [ ( "color", "white" )
-            , ( "background-color", "black" )
+            , ( "background-color", darkGrey )
             ]
     else
         style []

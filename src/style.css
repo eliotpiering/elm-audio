@@ -1,6 +1,10 @@
+/* blue    pale    light grey  grey    dark grey */
+/* #004489 #E1E1D6 #D3D9DF     #989898 #565656  */
+
 html, body {
     overflow: hidden;
   	font: 14px Montserrat;
+    background-color: #D3D9DF;
 }
 
 #main-container {
@@ -16,7 +20,7 @@ html, body {
     right: 0px;
     height: 140px; 
     width: 50%; 
-    background-color: black;
+    background-color: #565656;
     text-align: center;
 }
 
@@ -36,11 +40,12 @@ html, body {
     margin: 0px;
     top: 0px;
     left: 0px;
-    height: 140px; 
-    width: 50%; 
+    height: 130px;
+    padding-top: 10px;
+    width: 50%;
     -webkit-user-select: none;
     list-style: none;
-    background-color: black;
+    background-color: #565656;
     color: white;
     z-index: 99;
 }
@@ -72,13 +77,21 @@ html, body {
     -webkit-user-select: none;
 }
 
+#file-view-container ul>li:nth-child(even) {
+    background-color: #E1E1D6;
+}
+
 #queue-view-container ul {
     margin: 0px;
     list-style: none;
     -webkit-user-select: none;
 }
 
-.song-item {
+#queue-view-container ul>li:nth-child(even) {
+    background-color: #E1E1D6;
+}
+
+.song-item, .group-item {
     padding-top: 5px;
     padding-bottom: 5px;
     -webkit-user-select: none;

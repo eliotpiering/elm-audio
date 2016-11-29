@@ -32,7 +32,7 @@ app.ports.pause.subscribe(function(){
 
 /* Album Art */
 app.ports.lookupAlbumArt.subscribe(function(albumName){
-    console.log("searching for album art...");
+    // console.log("searching for album art...");
     // dbUtils.findById(albumName + "-album").then(function(doc){
     //     app.ports.updateAlbumArt.send(doc.picture);
     // });

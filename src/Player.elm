@@ -188,7 +188,7 @@ update action model =
         UpdateSongs (Ok songs) ->
             let
                 browser =
-                    Debug.log "browser" Browser.initialModel
+                    Browser.initialModel
 
                 browser_ =
                     { browser | items = Helpers.makeSongItemDictionary songs }
@@ -209,8 +209,7 @@ update action model =
                     Browser.initialModel
 
                 browser_ =
-                    Debug.log "new browser" <|
-                        { browser | items = Helpers.makeGroupItemDictionary groups }
+                    { browser | items = Helpers.makeGroupItemDictionary groups }
             in
                 ( { model
                     | browser =
@@ -252,8 +251,7 @@ update action model =
         AddSongToQueue (Ok song) ->
             let
                 newItems =
-                    Debug.log "new itenm " <|
-                        Helpers.makeSongItemList [ song ]
+                    Helpers.makeSongItemList [ song ]
 
                 model_ =
                     { model | dragStart = Nothing }

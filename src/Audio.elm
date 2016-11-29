@@ -1,4 +1,4 @@
-module Audio exposing (Msg, init, view, update, previousSong, nextSong)
+module Audio exposing (Msg, view, update, previousSong, nextSong)
 
 import Html exposing (Html)
 import Html.Events as Events
@@ -16,12 +16,7 @@ type alias ParentModel =
 
 
 type alias Model =
-    Int
-
-
-init : Int -> Model
-init id =
-    id
+    MyModels.SongModel
 
 
 update : Msg -> ParentModel -> ( ParentModel, Cmd msg )
@@ -91,7 +86,7 @@ type Msg
     | PreviousSong
 
 
-streamPath : Model -> String
+streamPath : Int -> String
 streamPath id =
     ApiHelpers.apiEndpoint ++ "stream/" ++ (toString id)
 
@@ -99,16 +94,48 @@ streamPath id =
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "audio-view-container" ]
-        [ (Html.div []
-            [ Html.audio
-                [ Attr.id "audio-player-container"
-                , Attr.src (streamPath model)
-                , Attr.type_ "audio/mp3"
-                , Attr.controls True
-                , Attr.autoplay True
-                , Events.on "ended" (JsonD.succeed NextSong)
-                ]
-                []
+        [ Html.div []
+            [ htmlAudio model.id
+            , currentSongInfo model
             ]
-          )
         ]
+
+
+htmlAudio : Int -> Html Msg
+htmlAudio id =
+    Html.audio
+        [ Attr.src (streamPath id)
+        , Attr.type_ "audio/mp3"
+        , Attr.controls True
+        , Attr.autoplay True
+        , Events.on "ended" (JsonD.succeed NextSong)
+        ]
+        []
+
+
+currentSongInfo : Model -> Html Msg
+currentSongInfo model =
+    Html.table []
+        [ Html.thead []
+            [ Html.tr []
+                [ tableHeaderItem "Artist"
+                , tableHeaderItem "Album"
+                , tableHeaderItem "Song"
+                ]
+            ]
+        , Html.tbody []
+            [ Html.tr []
+                [ tableItem model.artist
+                , tableItem model.album
+                , tableItem model.title
+                ]
+            ]
+        ]
+
+
+tableHeaderItem str =
+    Html.th [] [ Html.text str ]
+
+
+tableItem str =
+    Html.td [] [ Html.text str ]

@@ -21,7 +21,6 @@ html, body {
     height: 140px; 
     width: 50%; 
     background-color: #565656;
-    text-align: center;
 }
 
 #file-view-container {
@@ -67,10 +66,22 @@ html, body {
     position: static;
 }
 
-#audio-view-container audio {
-    position: relative;
-    top: 60px;
+#audio-view-container > div {
+    text-align: center;
+    color: white;
+    display: block;
+    margin-top: 15px;
 }
+
+#audio-view-container audio, #audio-view-container table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#audio-view-container td {
+    padding: 0 15px 0 15px;
+}
+
 
 #file-view-container ul {
     list-style: none;

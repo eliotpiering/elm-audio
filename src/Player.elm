@@ -488,10 +488,10 @@ audioPlayer model =
         Just item ->
             case item.data of
                 Song song ->
-                    Html.map AudioMsg (Audio.view song.id)
+                    Html.map AudioMsg (Audio.view song)
 
                 somthingElse ->
-                    Html.map AudioMsg (Audio.view 0)
+                    Html.div [ Attr.id "audio-view-container" ] []
 
         Nothing ->
             Html.div [ Attr.id "audio-view-container" ] []

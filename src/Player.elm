@@ -473,8 +473,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     Html.div [ Attr.id "main-container" ]
-        [ Html.div [ Attr.id "banner" ] []
-        , audioPlayer model
+        [ audioPlayer model
         , navigationView
         , browserView model
         , queueView model

@@ -11,6 +11,7 @@ import Dict exposing (Dict)
 import Item
 import Http
 import Helpers
+import Array.Extra
 
 
 type Msg
@@ -139,7 +140,7 @@ update msg model =
                                     currentQueueIndex
 
                             array_ =
-                                Array.append (Array.slice 0 index model.array) (Array.slice (index + 1) -1 model.array)
+                                Array.Extra.removeAt index model.array
                         in
                             ( { model | array = resetQueue array_ }, Just <| UpdateCurrentSong newQueueIndex )
 

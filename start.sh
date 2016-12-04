@@ -1,1 +1,1 @@
-/usr/bin/chromium /home/eliot/Develop/elm-audio/index.html < /dev/null
+/usr/bin/chromium http://music.eliotpiering.science:8080/index.html#albums < /dev/null

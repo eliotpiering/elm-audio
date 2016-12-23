@@ -143,16 +143,6 @@ update action model =
             , Cmd.none
             )
 
-        -- case queueCmd of
-        --     Just (Queue.UpdateCurrentSong newSong) ->
-        --         ( { model
-        --             | queue = queue_
-        --             , currentSong = newSong
-        --           }
-        --         , Helpers.lookupAlbumArt newSong queue_.array
-        --         )
-        --     anythingElse ->
-        --         ( { model | queue = queue_ }, Cmd.none )
         BrowserMsg msg ->
             let
                 ( browser_, browserCmd ) =
@@ -257,17 +247,6 @@ update action model =
                 , Cmd.none
                 )
 
-        -- case queueCmd of
-        --     Just (Queue.UpdateCurrentSong newSong) ->
-        --         ( { model_
-        --             | queue = queue_
-        --             , browser = Browser.update Browser.Reset False model.browser |> Tuple.first
-        --             , currentSong = newSong
-        --           }
-        --         , Helpers.lookupAlbumArt newSong queue_.array
-        --         )
-        --     anythingElse ->
-        --         ( model_, Cmd.none )
         AddSongsToQueue (Err _) ->
             ( model, Cmd.none )
 
@@ -289,17 +268,6 @@ update action model =
                 , Cmd.none
                 )
 
-        -- case queueCmd of
-        --     Just (Queue.UpdateCurrentSong newSong) ->
-        --         ( { model_
-        --             | queue = queue_
-        --             , browser = Browser.update Browser.Reset False model.browser |> Tuple.first
-        --             , currentSong = newSong
-        --           }
-        --         , Helpers.lookupAlbumArt newSong queue_.array
-        --         )
-        --     anythingElse ->
-        --         ( model_, Cmd.none )
         AddSongToQueue (Err _) ->
             ( model, Cmd.none )
 
@@ -366,22 +334,6 @@ update action model =
                                     , updateGroupCmds
                                     )
 
-                            -- case queueCmd of
-                            --     Just (Queue.UpdateCurrentSong newSong) ->
-                            --         ( { model_
-                            --             | queue = queue_
-                            --             , browser = browser_
-                            --             , currentSong = newSong
-                            --           }
-                            --         , updateGroupCmds
-                            --         )
-                            --     anythingElse ->
-                            --         ( { model_
-                            --             | queue = queue_
-                            --             , browser = browser_
-                            --           }
-                            --         , updateGroupCmds
-                            --         )
                             anythingElse ->
                                 ( model_, Cmd.none )
 
@@ -395,16 +347,6 @@ update action model =
                                 in
                                     ( { model_ | queue = queue_ }, Cmd.none )
 
-                            -- case queueCmd of
-                            --     Just (Queue.UpdateCurrentSong newSong) ->
-                            --         ( { model_
-                            --             | queue = queue_
-                            --             , currentSong = newSong
-                            --           }
-                            --         , Helpers.lookupAlbumArt newSong queue_.array
-                            --         )
-                            --     anythingElse ->
-                            --         ( model, Cmd.none )
                             anythingElse ->
                                 -- Removing songs from the queue
                                 let
@@ -413,16 +355,6 @@ update action model =
                                 in
                                     ( { model_ | queue = queue_ }, Cmd.none )
 
-                    -- case queueCmd of
-                    --     Just (Queue.UpdateCurrentSong newSong) ->
-                    --         ( { model_
-                    --             | queue = queue_
-                    --             , currentSong = newSong
-                    --           }
-                    --         , Helpers.lookupAlbumArt newSong queue_.array
-                    --         )
-                    --     anythingElse ->
-                    --         ( model, Cmd.none )
                     anythingElse ->
                         ( model_, Cmd.none )
 
@@ -490,15 +422,6 @@ view model =
         [ browserView model
         , queueView model
         ]
-
-
-
--- [ audioPlayer model
--- , navigationView
--- , browserView model
--- , queueView model
--- , AlbumArt.view model.albumArt
--- ]
 
 
 browserView : Model -> Html Msg

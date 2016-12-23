@@ -43,6 +43,7 @@ update msg model =
         Reset ->
             ( { model | isSelected = False }, Nothing )
 
+
 view : Maybe Pos -> Bool -> String -> SongItemModel -> Html Msg
 view maybeDragPos isCurrentSong id model =
     Html.li

@@ -9,6 +9,7 @@ import Dict exposing (Dict)
 import Item
 import Helpers
 import SortSongs
+import NavigationParser exposing (..)
 
 
 type Msg
@@ -17,11 +18,14 @@ type Msg
     | UpdateSongs ItemDictionary
     | MouseEnter
     | MouseLeave
+    | GroupBy String
 
 
 type BrowserCmd
     = OpenGroup ItemModel
     | AddSong ItemModel
+    | ChangeRoute Route
+    | None
 
 
 type alias Pos =
@@ -33,7 +37,7 @@ initialModel =
     { isMouseOver = False, items = Dict.empty }
 
 
-update : Msg -> Bool -> BrowserModel -> ( BrowserModel, Maybe BrowserCmd )
+update : Msg -> Bool -> BrowserModel -> ( BrowserModel, BrowserCmd )
 update msg isShiftDown model =
     case msg of
         ItemMsg id msg ->
@@ -50,19 +54,14 @@ update msg isShiftDown model =
                             Just (Item.DoubleClicked) ->
                                 case item_.data of
                                     Group groupModel ->
-                                        -- let
-                                        --     newItems =
-                                        --         Helpers.makeSongItemDictionary groupModel.songs
-                                        -- in
-                                        --     ( { model_ | items = newItems }, Nothing )
-                                        ( model_, Just <| OpenGroup item_)
+                                        ( model_, OpenGroup item_)
 
                                     Song _ ->
-                                        ( model_, Just <| AddSong item_ )
+                                        ( model_, AddSong item_ )
 
                             Just (Item.Clicked) ->
                                 if isShiftDown then
-                                    ( model_, Nothing )
+                                    ( model_, None )
                                 else
                                     let
                                         cleanItems =
@@ -71,25 +70,39 @@ update msg isShiftDown model =
                                         itemsWithOneSelected =
                                             Dict.insert id item_ cleanItems
                                     in
-                                        ( { model | items = itemsWithOneSelected }, Nothing )
+                                        ( { model | items = itemsWithOneSelected }, None )
 
                             anythingElse ->
-                                ( model_, Nothing )
+                                ( model_, None )
 
                 Nothing ->
-                    ( model, Nothing )
+                    ( model, None )
 
         Reset ->
-            ( { model | items = resetItems model.items }, Nothing )
+            ( { model | items = resetItems model.items }, None )
 
         UpdateSongs itemModels ->
-            ({model | items = itemModels}, Nothing)
+            ({model | items = itemModels}, None)
 
         MouseEnter ->
-            ( { model | isMouseOver = True }, Nothing )
+            ( { model | isMouseOver = True }, None )
 
         MouseLeave ->
-            ( { model | isMouseOver = False }, Nothing )
+            ( { model | isMouseOver = False }, None )
+
+        GroupBy key ->
+            case key of
+                "song" ->
+                    ( model, ChangeRoute SongsRoute )
+
+                "album" ->
+                    ( model, ChangeRoute AlbumsRoute )
+
+                "artist" ->
+                    ( model, ChangeRoute ArtistsRoute )
+
+                _ ->
+                    ( model, None )
 
 
 resetItems : ItemDictionary -> ItemDictionary
@@ -106,7 +119,8 @@ view maybePos model =
         , Events.onMouseLeave MouseLeave
         , MyStyle.mouseOver model.isMouseOver
         ]
-        [ Html.ul []
+        [ navigationView
+        , Html.ul []
             (List.map (itemToHtml maybePos) <| SortSongs.byGroupTitle <| Dict.toList model.items)
         ]
 
@@ -114,3 +128,11 @@ view maybePos model =
 itemToHtml : Maybe Pos -> ( String, ItemModel ) -> Html Msg
 itemToHtml maybePos ( id, item ) =
     Html.map (ItemMsg id) (Item.browserItemView maybePos id item)
+
+navigationView : Html Msg
+navigationView =
+    Html.ul [ Attr.id "navigation-view-container" ]
+        [ Html.li [ Events.onClick (GroupBy "album") ] [ Html.text "Group By album" ]
+        , Html.li [ Events.onClick (GroupBy "artist") ] [ Html.text "Group By artist" ]
+        , Html.li [ Events.onClick (GroupBy "song") ] [ Html.text "Group By song" ]
+        ]

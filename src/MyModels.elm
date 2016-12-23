@@ -5,8 +5,7 @@ import Dict exposing (Dict)
 
 
 type alias Model =
-    { currentSong : Int
-    , browser : BrowserModel
+    { browser : BrowserModel
     , queue : QueueModel
     , albumArt : String
     , currentMousePos : { x : Int, y : Int }
@@ -35,9 +34,10 @@ type alias GroupModel =
 
 
 type alias QueueModel =
-    { array : Array ItemModel
+    { array : Array SongItemModel
     , mouseOver : Bool
     , mouseOverItem : Int
+    , currentSong : Int
     }
 
 
@@ -49,6 +49,13 @@ type alias BrowserModel =
 
 type alias ItemDictionary =
     Dict String ItemModel
+
+
+type alias SongItemModel =
+    { isSelected : Bool
+    , isMouseOver : Bool
+    , song : SongModel
+    }
 
 
 type alias ItemModel =

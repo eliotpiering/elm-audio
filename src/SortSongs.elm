@@ -3,30 +3,18 @@ module SortSongs exposing (byAlbumAndTrack, byGroupTitle)
 import MyModels exposing (..)
 
 
--- Only works for items that are songs
-
-
-byAlbumAndTrack : List ItemModel -> List ItemModel
+byAlbumAndTrack : List SongItemModel -> List SongItemModel
 byAlbumAndTrack =
     List.sortWith
         (\item1 item2 ->
-            case item1.data of
-                Song s1 ->
-                    case item2.data of
-                        Song s2 ->
-                            case compare s1.album s2.album of
-                                EQ ->
-                                    compare s1.track s2.track
+            case compare item1.song.album item2.song.album of
+                EQ ->
+                    compare item1.song.track item2.song.track
 
-                                greaterOrLess ->
-                                    greaterOrLess
-
-                        anythingElse ->
-                            EQ
-
-                anythingElse ->
-                    EQ
+                greaterOrLess ->
+                    greaterOrLess
         )
+
 
 
 -- Only works for items that are groups

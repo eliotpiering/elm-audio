@@ -1,4 +1,4 @@
-module Song exposing (..)
+module QueueItem exposing (..)
 
 import Html exposing (Html)
 import Html.Events as Events
@@ -15,7 +15,7 @@ type Msg
     | Reset
 
 
-type SongCmd
+type QueueItemCmd
     = DoubleClicked
     | MouseEntered
     | Clicked
@@ -25,7 +25,7 @@ type alias Pos =
     { x : Int, y : Int }
 
 
-update : Msg -> SongItemModel -> ( SongItemModel, Maybe SongCmd )
+update : Msg -> QueueItemModel -> ( QueueItemModel, Maybe QueueItemCmd )
 update msg model =
     case msg of
         MouseEnter ->
@@ -44,7 +44,7 @@ update msg model =
             ( { model | isSelected = False }, Nothing )
 
 
-view : Maybe Pos -> Bool -> String -> SongItemModel -> Html Msg
+view : Maybe Pos -> Bool -> String -> QueueItemModel -> Html Msg
 view maybeDragPos isCurrentSong id model =
     Html.li
         [ Attr.class "song-item"

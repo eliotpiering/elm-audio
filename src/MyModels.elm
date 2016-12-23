@@ -34,7 +34,7 @@ type alias GroupModel =
 
 
 type alias QueueModel =
-    { array : Array SongItemModel
+    { array : Array QueueItemModel
     , mouseOver : Bool
     , mouseOverItem : Int
     , currentSong : Int
@@ -51,7 +51,7 @@ type alias ItemDictionary =
     Dict String ItemModel
 
 
-type alias SongItemModel =
+type alias QueueItemModel =
     { isSelected : Bool
     , isMouseOver : Bool
     , song : SongModel

@@ -3,7 +3,7 @@ module SortSongs exposing (byAlbumAndTrack, byGroupTitle)
 import MyModels exposing (..)
 
 
-byAlbumAndTrack : List SongItemModel -> List SongItemModel
+byAlbumAndTrack : List QueueItemModel -> List QueueItemModel
 byAlbumAndTrack =
     List.sortWith
         (\item1 item2 ->

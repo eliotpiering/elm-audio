@@ -12,15 +12,15 @@ import Http
 import Helpers
 import Array.Extra
 import Audio
-import Song
+import QueueItem
 
 
 type Msg
     = MouseEnter
     | MouseLeave
-    | SongMsg Int Song.Msg
+    | QueueItemMsg Int QueueItem.Msg
     | AudioMsg Audio.Msg
-    | Drop (List SongItemModel)
+    | Drop (List QueueItemModel)
     | Reorder
     | Remove
     | PreviousSong
@@ -40,21 +40,21 @@ update msg model =
         MouseLeave ->
             { model | mouseOver = False }
 
-        SongMsg id msg ->
+        QueueItemMsg id msg ->
             case Array.get id model.array of
                 Just song ->
                     let
-                        ( song_, songCmd ) =
-                            Song.update msg song
+                        ( song_, queueItemCmd ) =
+                            QueueItem.update msg song
 
                         model_ =
                             { model | array = Array.set id song_ model.array }
                     in
-                        case songCmd of
-                            Just (Song.MouseEntered) ->
+                        case queueItemCmd of
+                            Just (QueueItem.MouseEntered) ->
                                 { model_ | mouseOverItem = id }
 
-                            Just (Song.DoubleClicked) ->
+                            Just (QueueItem.DoubleClicked) ->
                                 { model_ | currentSong = id }
 
                             anythingElse ->
@@ -205,14 +205,14 @@ update msg model =
             model
 
 
-resetQueue : Array SongItemModel -> Array SongItemModel
+resetQueue : Array QueueItemModel -> Array QueueItemModel
 resetQueue =
-    Array.map (Song.update Song.Reset >> Tuple.first)
+    Array.map (QueueItem.update QueueItem.Reset >> Tuple.first)
 
 
-itemToHtml : Maybe Pos -> Int -> ( Int, SongItemModel ) -> Html Msg
+itemToHtml : Maybe Pos -> Int -> ( Int, QueueItemModel ) -> Html Msg
 itemToHtml maybePos currentSong ( id, song ) =
-    Html.map (SongMsg id) (Song.view maybePos (id == currentSong) (toString id) song)
+    Html.map (QueueItemMsg id) (QueueItem.view maybePos (id == currentSong) (toString id) song)
 
 
 view : Maybe Pos -> QueueModel -> Html Msg

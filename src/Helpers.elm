@@ -9,7 +9,7 @@ import Port
 -- Public
 
 
-itemListToSongItemList : List ItemModel -> List SongItemModel
+itemListToSongItemList : List ItemModel -> List QueueItemModel
 itemListToSongItemList itemModels =
     List.foldl
         (\item acc ->
@@ -28,7 +28,7 @@ itemListToSongItemList itemModels =
         itemModels
 
 
-makeSongItemList : List SongModel -> List SongItemModel
+makeSongItemList : List SongModel -> List QueueItemModel
 makeSongItemList songs =
     songs |> List.map (\s -> { song = s, isSelected = False, isMouseOver = False })
 

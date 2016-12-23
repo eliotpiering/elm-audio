@@ -51,15 +51,15 @@ update msg isShiftDown model =
                             { model | items = Dict.insert id item_ model.items }
                     in
                         case itemCmd of
-                            Just (Item.DoubleClicked) ->
+                            Item.DoubleClicked ->
                                 case item_.data of
                                     Group groupModel ->
-                                        ( model_, OpenGroup item_)
+                                        ( model_, OpenGroup item_ )
 
                                     Song _ ->
                                         ( model_, AddSong item_ )
 
-                            Just (Item.Clicked) ->
+                            Item.Clicked ->
                                 if isShiftDown then
                                     ( model_, None )
                                 else
@@ -72,7 +72,7 @@ update msg isShiftDown model =
                                     in
                                         ( { model | items = itemsWithOneSelected }, None )
 
-                            anythingElse ->
+                            Item.None ->
                                 ( model_, None )
 
                 Nothing ->
@@ -82,7 +82,7 @@ update msg isShiftDown model =
             ( { model | items = resetItems model.items }, None )
 
         UpdateSongs itemModels ->
-            ({model | items = itemModels}, None)
+            ( { model | items = itemModels }, None )
 
         MouseEnter ->
             ( { model | isMouseOver = True }, None )
@@ -127,7 +127,8 @@ view maybePos model =
 
 itemToHtml : Maybe Pos -> ( String, ItemModel ) -> Html Msg
 itemToHtml maybePos ( id, item ) =
-    Html.map (ItemMsg id) (Item.browserItemView maybePos id item)
+    Html.map (ItemMsg id) (Item.view maybePos id item)
+
 
 navigationView : Html Msg
 navigationView =
